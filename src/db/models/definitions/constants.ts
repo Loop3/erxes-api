@@ -66,6 +66,7 @@ export const KIND_CHOICES = {
   CALLPRO: 'callpro',
   TWITTER_DM: 'twitter-dm',
   CHATFUEL: 'chatfuel',
+  WHATSPRO: 'whatspro',
   ALL: [
     'messenger',
     'lead',
@@ -80,6 +81,7 @@ export const KIND_CHOICES = {
     'nylas-outlook',
     'nylas-yahoo',
     'twitter-dm',
+    'whatspro',
   ],
 };
 
