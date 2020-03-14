@@ -278,4 +278,7 @@ export const MODULE_NAMES = {
   SEGMENT: 'segment',
   ENGAGE: 'engage',
   SCRIPT: 'script',
+  FLOW_ACTION_TYPE: 'flowActionType',
+  FLOW_ACTION: 'flowAction',
+  FLOW: 'flow',
 };
