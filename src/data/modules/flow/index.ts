@@ -172,10 +172,6 @@ const handleSendMessage = async (flowAction: IFlowActionDocument, conversation: 
     requestName = 'replyTwitterDm';
   }
 
-  if (kind === KIND_CHOICES.WHATSAPP) {
-    requestName = 'replyWhatsapp';
-  }
-
   if (kind === KIND_CHOICES.WHATSPRO) {
     type = 'whatspro';
     requestName = 'replyWhatsPro';

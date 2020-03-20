@@ -36,6 +36,7 @@
     "verifyCustomerEmails": "ts-node ./src/commands/verifyCustomerEmails.ts",
     "repairPermissionData": "ts-node ./src/commands/repairPermissionData.ts",
     "migrate": "NODE_ENV=command migrate --migrations-dir='./dist/migrations' --store='./db-migrate-store.js' up",
+    "migrate-win": "set NODE_ENV=command migrate --migrations-dir='./dist/migrations' --store='./db-migrate-store.js' up",
     "release": "release-it"
   },
   "lint-staged": {
