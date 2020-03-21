@@ -81,6 +81,10 @@ const apolloServer = new ApolloServer({
       }
 
       if (!user.isOwner && scopeBrandIds.length) {
+        // Select non-existent or empty arrays too
+        scopeBrandIds.push(null);
+        scopeBrandIds.push([]);
+
         brandIdSelector = { _id: { $in: scopeBrandIds } };
         commonQuerySelector = { scopeBrandIds: { $in: scopeBrandIds } };
         commonQuerySelectorElk = { terms: { scopeBrandIds } };
