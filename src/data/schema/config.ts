@@ -20,6 +20,7 @@ export const types = `
 
   type ENV {
     USE_BRAND_RESTRICTIONS: String
+    USE_CHAT_RESTRICTIONS: String
   }
 `;
 

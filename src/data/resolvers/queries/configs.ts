@@ -47,6 +47,7 @@ const configQueries = {
   configsGetEnv(_root) {
     return {
       USE_BRAND_RESTRICTIONS: process.env.USE_BRAND_RESTRICTIONS,
+      USE_CHAT_RESTRICTIONS: process.env.USE_CHAT_RESTRICTIONS,
     };
   },
 };
