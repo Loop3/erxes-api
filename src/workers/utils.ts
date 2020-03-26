@@ -97,8 +97,4 @@ export const clearIntervals = () => {
 
 const { MONGO_URL = '' } = process.env;
 
-export const connect = () =>
-  mongoose.connect(
-    MONGO_URL,
-    { useNewUrlParser: true, useCreateIndex: true },
-  );
+export const connect = () => mongoose.connect(MONGO_URL, { useNewUrlParser: true, useCreateIndex: true });

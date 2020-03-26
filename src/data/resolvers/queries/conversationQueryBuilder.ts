@@ -153,7 +153,9 @@ export default class Builder {
     const channel = await Channels.getChannel(channelId);
 
     return {
-      integrationId: { $in: (channel.integrationIds || []).filter(id => this.activeIntegrationIds.includes(id)) },
+      integrationId: {
+        $in: (channel.integrationIds || []).filter(id => this.activeIntegrationIds.includes(id)),
+      },
     };
   }
 
@@ -200,7 +202,9 @@ export default class Builder {
 
   // filter by integration type
   public async integrationTypeFilter(integrationType: string): Promise<{ $and: IIntersectIntegrationIds[] }> {
-    const integrations = await Integrations.findIntegrations({ kind: integrationType });
+    const integrations = await Integrations.findIntegrations({
+      kind: integrationType,
+    });
 
     return {
       $and: [
@@ -256,6 +260,10 @@ export default class Builder {
 
     // filter by channelId & brandId
     this.queries.integrations = await this.integrationsFilter();
+
+    if (!this.queries.integrations.integrationId.$in.length) {
+      this.queries.integrations = {};
+    }
 
     // unassigned
     if (this.params.unassigned) {

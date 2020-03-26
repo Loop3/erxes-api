@@ -99,7 +99,8 @@ const conversationQueries = {
 
     await qb.buildAllQueries();
 
-    return Conversations.find(qb.mainQuery())
+    const query = qb.mainQuery();
+    return Conversations.find(query)
       .sort({ updatedAt: -1 })
       .limit(params.limit || 0);
   },
@@ -172,6 +173,7 @@ const conversationQueries = {
 
     const qb = new QueryBuilder(params, {
       _id: user._id,
+      isOwner: user.isOwner,
       starredConversationIds: user.starredConversationIds,
     });
 
@@ -246,6 +248,7 @@ const conversationQueries = {
     // initiate query builder
     const qb = new QueryBuilder(params, {
       _id: user._id,
+      isOwner: user.isOwner,
       starredConversationIds: user.starredConversationIds,
     });
 
@@ -261,6 +264,7 @@ const conversationQueries = {
     // initiate query builder
     const qb = new QueryBuilder(params, {
       _id: user._id,
+      isOwner: user.isOwner,
       starredConversationIds: user.starredConversationIds,
     });
 
@@ -274,7 +278,14 @@ const conversationQueries = {
    */
   async conversationsTotalUnreadCount(_root, _args, { user }: IContext) {
     // initiate query builder
-    const qb = new QueryBuilder({}, { _id: user._id });
+    const qb = new QueryBuilder(
+      {},
+      {
+        _id: user._id,
+        isOwner: user.isOwner,
+      },
+    );
+
     await qb.buildAllQueries();
 
     // get all possible integration ids

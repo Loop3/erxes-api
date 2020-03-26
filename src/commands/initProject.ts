@@ -40,6 +40,7 @@ connect()
 
     if (!flowActionTypes || !flowActionTypes.length) {
       flowActionTypes = [
+        'erxes.action.root',
         'erxes.action.define.department',
         'erxes.action.define.tabulation',
         'erxes.action.transfer.to.agent',
@@ -74,79 +75,162 @@ connect()
 
       return FlowActionTypes.insertMany(flowActionTypes);
     }
-
-    return;
   })
 
   .then(async () => {
-    let flow = await Flows.createFlow({
-      assignedUserId: 'wJjxQipSXXHbNyqFZ',
-      name: 'Teste',
-      description: 'Flow de teste',
+    let rootFlow = await Flows.findOne({ name: 'Root' });
+
+    if (!rootFlow) {
+      rootFlow = await Flows.createFlow({
+        assignedUserId: 'wJjxQipSXXHbNyqFZ',
+        name: 'Root',
+        description: '',
+      });
+    }
+
+    let secondFlow = await Flows.findOne({ name: 'Second' });
+
+    if (!secondFlow) {
+      secondFlow = await Flows.createFlow({
+        assignedUserId: 'wJjxQipSXXHbNyqFZ',
+        name: 'Second',
+        description: '',
+      });
+    }
+
+    const askType = await FlowActionTypes.findOne({
+      type: 'erxes.action.to.ask',
     });
 
     const sendMessageType = await FlowActionTypes.findOne({
       type: 'erxes.action.send.message',
     });
-    const askType = await FlowActionTypes.findOne({
-      type: 'erxes.action.to.ask',
+
+    const defineDepartmenType = await FlowActionTypes.findOne({
+      type: 'erxes.action.define.department',
     });
 
-    await FlowActions.createFlowAction({
-      order: 0,
-      type: sendMessageType?.type,
-      flowId: flow.id,
-      actionId: sendMessageType?.id,
-      value: JSON.stringify({
-        content: [
-          'Bem vindo, este é um teste de automação do WhatsBot, converse com o bot respondendo as perguntas que receber',
-          'Olá, converse com o bot respondendo as perguntas que receber',
-        ],
-      }),
+    const executeFlowType = await FlowActionTypes.findOne({
+      type: 'erxes.action.execute.autmations.flow',
     });
 
-    await FlowActions.createFlowAction({
-      order: 1,
-      type: askType?.type,
-      flowId: flow.id,
-      actionId: askType?.id,
-      value: JSON.stringify({
-        content: [
-          'Com qual setor você gostaria de conversar? 1 - Administrativo 2 - Financeiro - 3 - Sobre',
-          'Escolha abaixo o setor que melhor lhe atente? 1 - Administrativo 2 - Financeiro - 3 - Sobre',
-        ],
-        conditions: [
-          {
-            operator: '=',
-            values: ['1', 'administrativo', 'adm'],
-            action: 'erxes.action.choose.department',
-            value: 'Administrativo',
-          },
-          {
-            operator: '=',
-            values: ['2', 'financeiro'],
-            action: 'erxes.action.choose.department',
-            value: 'Financeiro',
-          },
-          {
-            operator: '=',
-            values: ['3', 'sobre'],
-            action: 'erxes.action.execute.action',
-            value: '2',
-          },
-        ],
-      }),
-    });
+    if (!(await FlowActions.count({ flowId: rootFlow.id }))) {
+      await FlowActions.createFlowAction({
+        order: 0,
+        type: askType?.type,
+        flowId: rootFlow.id,
+        actionId: askType?.id,
+        value: JSON.stringify({
+          content: [
+            'Olá, tudo bem?' +
+              '<br/>Muito bom vê-lo aqui! 😊<br/>' +
+              '<br/>Bom, para agilizar seu atendimento, por favor digite a opção desejada:' +
+              '<br/><b>1</b> - Ainda não sou cliente, quero falar com o Comercial.' +
+              '<br/><b>2</b> - Já sou cliente, quero falar com o Suporte pois tenho dúvidas ou preciso de algo',
+          ],
+          conditions: [
+            {
+              operator: '=',
+              values: ['1', 'comercial', 'vendas', 'venda'],
+              action: 'erxes.action.execute.action',
+              value: '1',
+            },
+            {
+              operator: '=',
+              values: ['2', 'suporte'],
+              action: 'erxes.action.execute.action',
+              value: '3',
+            },
+          ],
+        }),
+      });
 
-    await FlowActions.createFlowAction({
-      order: 2,
-      type: sendMessageType?.type,
-      flowId: flow.id,
-      actionId: sendMessageType?.id,
-      value: JSON.stringify({
-        content: ['Este é um teste de automação do WhatsBot'],
-      }),
-    });
+      await FlowActions.createFlowAction({
+        order: 1,
+        flowId: rootFlow.id,
+        type: defineDepartmenType?.type,
+        actionId: defineDepartmenType?.id,
+        value: 'Rs8GERDMd4PK5xnKv',
+      });
+
+      await FlowActions.createFlowAction({
+        order: 2,
+        flowId: rootFlow.id,
+        type: executeFlowType?.type,
+        actionId: executeFlowType?.id,
+        value: secondFlow.id,
+      });
+
+      await FlowActions.createFlowAction({
+        order: 3,
+        flowId: rootFlow.id,
+        type: defineDepartmenType?.type,
+        actionId: defineDepartmenType?.id,
+        value: 'RybHspzXFcc2GPtG4',
+      });
+
+      await FlowActions.createFlowAction({
+        order: 4,
+        flowId: rootFlow.id,
+        type: executeFlowType?.type,
+        actionId: executeFlowType?.id,
+        value: secondFlow.id,
+      });
+    }
+
+    if (!(await FlowActions.count({ flowId: secondFlow.id }))) {
+      await FlowActions.createFlowAction({
+        order: 0,
+        flowId: secondFlow.id,
+        type: askType?.type,
+        actionId: askType?.id,
+        value: JSON.stringify({
+          content: [
+            '<br/>Legal, por favor digite a opção desejada:' +
+              '<br/><b>1</b> - Informações sobre MEI e nossos serviços' +
+              '<br/><b>2</b> - Falar com um atendente',
+          ],
+          conditions: [
+            {
+              operator: '=',
+              values: [
+                '1',
+                'mei',
+                'servicos',
+                'serviços',
+                'servico',
+                'serviço',
+                'info',
+                'informações',
+                'informacoes',
+                'infos',
+                'sobre',
+              ],
+              action: 'erxes.action.execute.action',
+              value: '1',
+            },
+            {
+              operator: '=',
+              values: ['2', 'falar', 'atendente', 'atendimento'],
+              action: 'erxes.action.transfer.to.agent',
+              value: '',
+            },
+          ],
+        }),
+      });
+
+      await FlowActions.createFlowAction({
+        order: 1,
+        flowId: secondFlow.id,
+        type: sendMessageType?.type,
+        actionId: sendMessageType?.id,
+        value: JSON.stringify({
+          content: [
+            'Para saber mais sobre MEI e nossos serviços acesse: <br/>' + 'https://dues.gpages.com.br/pagina-captura',
+          ],
+        }),
+      });
+    }
   })
 
   .then(() => {

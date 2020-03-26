@@ -38,7 +38,7 @@ export const flowActionSchema = new Schema({
   flowId: field({ type: String, label: 'Flow' }),
   actionId: field({ type: String, label: 'Flow Action Type' }),
   userId: field({ type: String, label: 'Created by' }),
-  value: field({ type: String, label: 'Value' }),
+  value: field({ type: String, optional: true, label: 'Value' }),
   order: field({ type: Number, label: 'Order' }),
   createdAt: field({ type: Date, label: 'Created at' }),
 });
