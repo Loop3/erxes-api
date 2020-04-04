@@ -71,6 +71,7 @@ export const KIND_CHOICES = {
   SMOOCH_TELEGRAM: 'smooch-telegram',
   SMOOCH_TWILIO: 'smooch-twilio',
   WHATSAPP: 'whatsapp',
+  WHATSPRO: 'whatspro',
   ALL: [
     'messenger',
     'lead',
@@ -90,6 +91,7 @@ export const KIND_CHOICES = {
     'smooch-telegram',
     'smooch-twilio',
     'whatsapp',
+    'whatspro',
   ],
 };
 

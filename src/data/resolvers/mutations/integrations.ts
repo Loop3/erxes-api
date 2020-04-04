@@ -197,6 +197,7 @@ const integrationMutations = {
         'smooch-line',
         'smooch-twilio',
         'whatsapp',
+        'whatspro',
       ].includes(integration.kind)
     ) {
       await dataSources.IntegrationsAPI.removeIntegration({ integrationId: _id });
