@@ -1,11 +1,11 @@
 import { HTTPCache, RESTDataSource } from 'apollo-datasource-rest';
-import { getEnv } from '../utils';
+import { getSubServiceDomain } from '../utils';
 
 export default class IntegrationsAPI extends RESTDataSource {
   constructor() {
     super();
 
-    const INTEGRATIONS_API_DOMAIN = getEnv({ name: 'INTEGRATIONS_API_DOMAIN' });
+    const INTEGRATIONS_API_DOMAIN = getSubServiceDomain({ name: 'INTEGRATIONS_API_DOMAIN' });
 
     this.baseURL = INTEGRATIONS_API_DOMAIN;
     this.httpCache = new HTTPCache();
@@ -61,6 +61,14 @@ export default class IntegrationsAPI extends RESTDataSource {
 
   public async replyTwitterDm(params) {
     return this.post('/twitter/reply', params);
+  }
+
+  public async replySmooch(params) {
+    return this.post('/smooch/reply', params);
+  }
+
+  public async replyWhatsApp(params) {
+    return this.post('/whatsapp/reply', params);
   }
 
   public async updateConfigs(configsMap) {

@@ -1,6 +1,6 @@
 {
   "name": "erxes-api",
-  "version": "0.12.5",
+  "version": "0.13.0",
   "description": "GraphQL API for erxes main project",
   "homepage": "https://erxes.io",
   "repository": "https://github.com/erxes/erxes-api",
@@ -28,13 +28,14 @@
     "test": "node --expose-gc --max_old_space_size=4000 ./node_modules/.bin/jest --runInBand --forceExit --silent --logHeapUsage && ts-node ./src/commands/aftertest.ts",
     "generateVersion": "ts-node ./src/commands/generateVersion.ts",
     "loadInitialData": "ts-node ./src/commands/loadInitialData.ts",
-    "loadPermission": "mongorestore --db erxes ./permissionData",
+    "loadPermission": "mongorestore --db erxes ./src/permissionData",
     "initProject": "ts-node ./src/commands/initProject.ts",
     "createGooglePubsubTopics": "ts-node ./src/commands/createGooglePubsubTopics.ts",
     "customCommand": "ts-node ./src/commands/customCommand.ts",
     "resetMigrations": "ts-node ./src/commands/resetMigrations.ts",
-    "verifyCustomerEmails": "ts-node ./src/commands/verifyCustomerEmails.ts",
+    "verifyCustomerEmails": "DEBUG=erxes-api:* ts-node ./src/commands/verifyCustomerEmails.ts",
     "repairPermissionData": "ts-node ./src/commands/repairPermissionData.ts",
+    "runEsCommand": "ts-node ./src/commands/runEsCommand.ts",
     "migrate": "NODE_ENV=command migrate --migrations-dir='./dist/migrations' --store='./db-migrate-store.js' up",
     "release": "release-it"
   },
@@ -92,6 +93,7 @@
     "twit": "^2.2.9",
     "underscore": "^1.8.3",
     "uuid": "^3.3.3",
+    "uuid-by-string": "^3.0.2",
     "validator": "^9.0.0",
     "xlsx-populate": "^1.20.1",
     "xss": "^1.0.6"
