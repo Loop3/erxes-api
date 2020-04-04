@@ -1,4 +1,5 @@
 import * as amqplib from 'amqplib';
+import { validateEmail } from '../data/utils';
 import { connect, disconnect } from '../db/connection';
 import { Customers } from '../db/models';
 
@@ -11,34 +12,36 @@ const main = async () => {
   connect().then(async () => {
     const verify = async () => {
       const argv = process.argv;
-
-      let limit = Number.MAX_SAFE_INTEGER;
-
-      if (argv.length > 2) {
-        limit = parseInt(argv[2], 10);
-      }
+      const useRest = argv.length > 2;
 
       const query = { primaryEmail: { $exists: true, $ne: null }, emailValidationStatus: { $exists: false } };
-
-      const customers = await Customers.find(query, { primaryEmail: 1 }).limit(limit);
-
+      const customers = await Customers.find(query, { primaryEmail: 1 });
       const emails = customers.map(customer => customer.primaryEmail);
+
+      if (useRest) {
+        for (const email of emails) {
+          console.log('Validating .....', email);
+          await validateEmail(email || '', true);
+        }
+
+        process.exit();
+      }
 
       const args = {
         action: 'emailVerify',
         data: { emails },
       };
 
-      await channel.assertQueue('erxes-api:engages-notification');
-      await channel.sendToQueue('erxes-api:engages-notification', Buffer.from(JSON.stringify(args)));
+      await channel.assertQueue('erxes-api:email-verifier-notification');
+      await channel.sendToQueue('erxes-api:email-verifier-notification', Buffer.from(JSON.stringify(args)));
     };
 
-    verify();
+    await verify();
 
     // listen for engage notification ===========
-    await channel.assertQueue('engagesBulkEmailNotification');
+    await channel.assertQueue('emailVerifierBulkNotification');
 
-    channel.consume('engagesBulkEmailNotification', async msg => {
+    channel.consume('emailVerifierBulkNotification', async msg => {
       if (msg !== null) {
         console.log('Bulk status: ', JSON.parse(msg.content.toString()));
 
@@ -56,4 +59,10 @@ const main = async () => {
   });
 };
 
-main();
+main()
+  .then(() => {
+    console.log('success ...');
+  })
+  .catch(e => {
+    console.log(e.message);
+  });

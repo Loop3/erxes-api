@@ -400,9 +400,7 @@ interface ICompanyFactoryInput {
   tagIds?: string[];
   scopeBrandIds?: string[];
   plan?: string;
-  leadStatus?: string;
   status?: string;
-  lifecycleState?: string;
   createdAt?: Date;
   modifiedAt?: Date;
   phones?: string[];
@@ -424,9 +422,7 @@ export const companyFactory = (params: ICompanyFactoryInput = {}) => {
     website: params.website || faker.internet.domainName(),
     tagIds: params.tagIds || [],
     plan: params.plan || faker.random.word(),
-    leadStatus: params.leadStatus || 'open',
     status: params.status || STATUSES.ACTIVE,
-    lifecycleState: params.lifecycleState || 'lead',
     phones: params.phones || [],
     emails: params.emails || [],
     scopeBrandIds: params.scopeBrandIds || [],
@@ -464,20 +460,18 @@ interface ICustomerFactoryInput {
   doNotDisturb?: string;
   leadStatus?: string;
   status?: string;
-  lifecycleState?: string;
   customFieldsData?: any;
   trackedData?: any;
   tagIds?: string[];
   ownerId?: string;
-  emailValidationStatus?: string;
   profileScore?: number;
   code?: string;
   isOnline?: boolean;
   lastSeenAt?: number;
   sessionCount?: number;
   visitorContactInfo?: any;
-  urlVisits?: object;
   deviceTokens?: string[];
+  emailValidationStatus?: string;
   mergedIds?: string[];
 }
 
@@ -495,13 +489,11 @@ export const customerFactory = async (params: ICustomerFactoryInput = {}, useMod
     primaryPhone: params.primaryPhone,
     emails: params.emails || [],
     phones: params.phones || [],
-    leadStatus: params.leadStatus || 'open',
+    leadStatus: params.leadStatus || 'new',
     status: params.status || STATUSES.ACTIVE,
-    lifecycleState: params.lifecycleState || 'lead',
     lastSeenAt: faker.date.between(createdAt, new Date()),
     isOnline: params.isOnline || false,
     sessionCount: faker.random.number(),
-    urlVisits: params.urlVisits,
     customFieldsData: params.customFieldsData || {},
     trackedData: params.trackedData || {},
     tagIds: params.tagIds || [Random.id()],
