@@ -13,8 +13,7 @@ connect()
     });
 
     // create admin user
-
-    let user = await Users.findOne({ email: 'admin@erxes.io' });
+    let user = await Users.findOne({ isOwner: true });
 
     if (!user) {
       user = await Users.createUser({
@@ -88,6 +87,7 @@ connect()
     const sendMessageType = await FlowActionTypes.findOne({
       type: 'erxes.action.send.message',
     });
+  
     const askType = await FlowActionTypes.findOne({
       type: 'erxes.action.to.ask',
     });

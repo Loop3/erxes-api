@@ -37,6 +37,7 @@ import { conditionSchema, segmentSchema } from '../../../db/models/definitions/s
 import { tagSchema } from '../../../db/models/definitions/tags';
 import { taskSchema } from '../../../db/models/definitions/tasks';
 import { ticketSchema } from '../../../db/models/definitions/tickets';
+import { userSchema } from '../../../db/models/definitions/users';
 import { flowActionTypeSchema } from '../../../db/models/definitions/flowActionTypes';
 import { flowActionSchema } from '../../../db/models/definitions/flowActions';
 import { flowSchema } from '../../../db/models/definitions/flows';
@@ -192,16 +193,20 @@ const LOG_MAPPINGS: ISchemaMap[] = [
     schemas: [scriptSchema],
   },
   {
+    name: MODULE_NAMES.USER,
+    schemas: [userSchema],
+  },
+  {
+    name: MODULE_NAMES.FLOW,
+    schemas: [flowSchema],
+  },
+  {
     name: MODULE_NAMES.FLOW_ACTION_TYPE,
     schemas: [flowActionTypeSchema],
   },
   {
     name: MODULE_NAMES.FLOW_ACTION,
     schemas: [flowActionSchema],
-  },
-  {
-    name: MODULE_NAMES.FLOW,
-    schemas: [flowSchema],
   },
 ];
 
@@ -227,17 +232,9 @@ const logQueries = {
    * Fetches logs from logs api server
    */
   logs(_root, params: ILogQueryParams) {
-    const { start, end, userId, action, page, perPage } = params;
-
-    return fetchLogs({
-      start,
-      end,
-      userId,
-      action,
-      page,
-      perPage,
-    });
+    return fetchLogs(params);
   },
+
   async getDbSchemaLabels(_root, params: { type: string }) {
     let fieldNames: INameLabel[] = [];
 
