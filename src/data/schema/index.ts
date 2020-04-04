@@ -128,6 +128,14 @@ import {
 
 import { mutations as WidgetMutations, queries as WidgetQueries, types as WidgetTypes } from './widget';
 
+import {
+  mutations as FlowActionTypeMutations,
+  queries as FlowActionTypeQueries,
+  types as FlowActionTypeTypes,
+} from './flowActionType';
+import { mutations as FlowActionMutations, queries as FlowActionQueries, types as FlowActionTypes } from './flowAction';
+import { mutations as FlowMutations, queries as FlowQueries, types as FlowTypes } from './flow';
+
 export const types = `
   scalar JSON
   scalar Date
@@ -171,6 +179,9 @@ export const types = `
   ${RobotTypes}
   ${PipelineLabelTypes}
   ${WidgetTypes}
+  ${FlowActionTypeTypes}
+  ${FlowActionTypes}
+  ${FlowTypes}
 `;
 
 export const queries = `
@@ -213,6 +224,9 @@ export const queries = `
     ${RobotQueries}
     ${PipelineLabelQueries}
     ${WidgetQueries}
+    ${FlowActionTypeQueries}
+    ${FlowActionQueries}
+    ${FlowQueries}
   }
 `;
 
@@ -253,6 +267,9 @@ export const mutations = `
     ${RobotMutations}
     ${PipelineLabelMutations}
     ${WidgetMutations}
+    ${FlowActionTypeMutations}
+    ${FlowActionMutations}
+    ${FlowMutations}
   }
 `;
 

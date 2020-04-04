@@ -36,6 +36,8 @@ export const types = `
     participatedUsers: [User]
     participatorCount: Int
     videoCallData: VideoCallData
+    
+    currentFlowActionId: String
   }
 
   type EngageData {

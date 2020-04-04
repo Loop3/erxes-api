@@ -25,6 +25,8 @@ export interface IConversation {
 
   firstRespondedUserId?: string;
   firstRespondedDate?: Date;
+
+  currentFlowActionId?: string;
 }
 
 // Conversation schema
@@ -70,4 +72,6 @@ export const conversationSchema = new Schema({
 
   firstRespondedUserId: field({ type: String }),
   firstRespondedDate: field({ type: Date }),
+
+  currentFlowActionId: field({ type: String }),
 });
