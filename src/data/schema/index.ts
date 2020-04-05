@@ -128,6 +128,14 @@ import {
 
 import { mutations as WidgetMutations, queries as WidgetQueries, types as WidgetTypes } from './widget';
 
+import {
+  mutations as FlowActionTypeMutations,
+  queries as FlowActionTypeQueries,
+  types as FlowActionTypeTypes,
+} from './flowActionType';
+import { mutations as FlowActionMutations, queries as FlowActionQueries, types as FlowActionTypes } from './flowAction';
+import { mutations as FlowMutations, queries as FlowQueries, types as FlowTypes } from './flow';
+
 export const types = `
   scalar JSON
   scalar Date
@@ -171,6 +179,9 @@ export const types = `
   ${RobotTypes}
   ${PipelineLabelTypes}
   ${WidgetTypes}
+  ${FlowActionTypeTypes}
+  ${FlowActionTypes}
+  ${FlowTypes}
 `;
 
 export const queries = `
@@ -213,6 +224,9 @@ export const queries = `
     ${RobotQueries}
     ${PipelineLabelQueries}
     ${WidgetQueries}
+    ${FlowActionTypeQueries}
+    ${FlowActionQueries}
+    ${FlowQueries}
   }
 `;
 
@@ -253,6 +267,9 @@ export const mutations = `
     ${RobotMutations}
     ${PipelineLabelMutations}
     ${WidgetMutations}
+    ${FlowActionTypeMutations}
+    ${FlowActionMutations}
+    ${FlowMutations}
   }
 `;
 
@@ -269,6 +286,15 @@ export const subscriptions = `
     importHistoryChanged(_id: String!): ImportHistory
     notificationInserted(userId: String): Notification
     onboardingChanged(userId: String!): OnboardingNotification
+    
+    pipelinesChanged(_id: String!): Pipeline
+    dealsChanged(_id: String!): Deal
+    ticketsChanged(_id: String!): Ticket
+    tasksChanged(_id: String!): Task
+    growthHacksChanged(_id: String!): GrowthHack
+    
+    checklistsChanged(contentType: String!, contentTypeId: String!): Checklist
+    checklistDetailChanged(_id: String!): Checklist
   }
 `;
 
