@@ -1,3 +1,4 @@
+import * as moment from 'moment';
 import * as strip from 'strip';
 import {
   ConversationMessages,
@@ -24,6 +25,8 @@ import { KIND_CHOICES } from '../../../db/models/definitions/constants';
 import { IConversationMessageAdd, publishConversationsChanged } from '../../resolvers/mutations/conversations';
 import { graphqlPubsub } from '../../../pubsub';
 import Messages from '../../../db/models/ConversationMessages';
+import { IIntegrationDocument } from '../../../db/models/definitions/integrations';
+import { IDetail, IUserDocument } from '../../../db/models/definitions/users';
 
 const actionWithSendNext = ['erxes.action.send.message', 'erxes.action.define.department'];
 
@@ -49,7 +52,24 @@ const handleMessage = async (msg: IMessageDocument) => {
 
   const flow = await Flows.getFlow(integration.flowId);
 
-  if (!flow || (conversation.assignedUserId && conversation.assignedUserId !== flow.assignedUserId)) return;
+  if (!flow) return;
+
+  if (conversation.assignedUserId) {
+    if (conversation.assignedUserId !== flow.assignedUserId) {
+      let lastMessage = await ConversationMessages.findOne({
+        userId: conversation.assignedUserId,
+        conversationId: conversation.id,
+      })
+        .sort({ createdAt: -1 })
+        .exec();
+
+      if (lastMessage && moment(lastMessage.createdAt).isAfter(moment().subtract(30, 'minutes'))) {
+        return;
+      }
+
+      conversation.assignedUserId = undefined;
+    }
+  }
 
   const user = await Users.findById(flow.assignedUserId);
 
@@ -62,6 +82,7 @@ const handleMessage = async (msg: IMessageDocument) => {
     );
 
     conversation = conversations[0];
+    conversation.currentFlowActionId = undefined;
 
     // notify graphl subscription
     publishConversationsChanged([conversation.id], 'assigneeChanged');
@@ -173,6 +194,29 @@ const handleMessage = async (msg: IMessageDocument) => {
                     graphqlPubsub.publish('conversationClientMessageInserted', {
                       conversationClientMessageInserted: message,
                     });
+
+                    if (condition.value) {
+                      let content = condition.value;
+                      let details: IDetail = assignedUser.details?.toObject() || {};
+
+                      const keys = Object.keys(details);
+
+                      for (const key of keys) {
+                        content = content.replace(new RegExp(`{{${key}}}`), details[key]);
+                      }
+
+                      handleSendMessage(
+                        integration,
+                        conversation,
+                        {
+                          conversationId: conversation.id,
+                          flowActionId: flowAction.id,
+                          internal: false,
+                          content,
+                        },
+                        assignedUser,
+                      );
+                    }
                   }
                 }
 
@@ -207,7 +251,7 @@ const handleMessage = async (msg: IMessageDocument) => {
 
   switch (flowAction.type) {
     case 'erxes.action.send.message':
-      await handleSendMessage(flowAction, conversation);
+      await proccessSendMessage(flowAction, conversation);
 
       if (
         await FlowActions.findOne({
@@ -219,7 +263,7 @@ const handleMessage = async (msg: IMessageDocument) => {
 
       break;
     case 'erxes.action.to.ask':
-      await handleSendMessage(flowAction, conversation);
+      await proccessSendMessage(flowAction, conversation);
       break;
 
     case 'erxes.action.define.department':
@@ -250,14 +294,10 @@ const handleMessage = async (msg: IMessageDocument) => {
   }
 };
 
-const handleSendMessage = async (flowAction: IFlowActionDocument, conversation: IConversationDocument) => {
+const proccessSendMessage = async (flowAction: IFlowActionDocument, conversation: IConversationDocument) => {
   const integration = await Integrations.getIntegration(conversation.integrationId);
 
   if (!integration) return;
-
-  const kind = integration.kind;
-  const integrationId = integration.id;
-  const conversationId = conversation.id;
 
   const customer = await Customers.findById(conversation.customerId);
 
@@ -278,13 +318,26 @@ const handleSendMessage = async (flowAction: IFlowActionDocument, conversation: 
   position = Math.round(position * Math.random());
 
   const doc: IConversationMessageAdd = {
-    conversationId,
+    conversationId: conversation.id,
     flowActionId: flowAction.id,
     internal: false,
     content: content[position],
   };
 
+  handleSendMessage(integration, conversation, doc, user);
+};
+
+const handleSendMessage = async (
+  integration: IIntegrationDocument,
+  conversation: IConversationDocument,
+  doc: any,
+  user: IUserDocument,
+) => {
   const message = await ConversationMessages.addMessage(doc, user._id);
+
+  const kind = integration.kind;
+  const integrationId = integration.id;
+  const conversationId = conversation.id;
 
   let requestName;
   let type;
