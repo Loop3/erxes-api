@@ -37,6 +37,8 @@ const handleCondition = (condition: IFlowActionValueCondition, content: string =
 };
 
 const handleMessage = async (msg: IMessageDocument) => {
+  if (msg.isGroupMsg || !msg.content) return;
+
   let conversation = await Conversations.getConversation(msg.conversationId);
 
   if (!conversation) return;
