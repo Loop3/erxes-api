@@ -63,7 +63,7 @@ const handleMessage = async (msg: IMessageDocument) => {
         .sort({ createdAt: -1 })
         .exec();
 
-      if (lastMessage && moment(lastMessage.createdAt).isAfter(moment().subtract(30, 'minutes'))) {
+      if (lastMessage && moment(lastMessage.createdAt).isAfter(moment().subtract(1, 'day'))) {
         return;
       }
 
@@ -316,6 +316,20 @@ const proccessSendMessage = async (flowAction: IFlowActionDocument, conversation
   let position = content.length - 1;
 
   position = Math.round(position * Math.random());
+
+  let lastMessage = await ConversationMessages.findOne({
+    userId: conversation.assignedUserId,
+    conversationId: conversation.id,
+  })
+    .sort({ createdAt: -1 })
+    .exec();
+
+  if (
+    lastMessage &&
+    content.includes(lastMessage.content || '') &&
+    moment(lastMessage.createdAt).isAfter(moment().subtract(30, 'minutes'))
+  )
+    return;
 
   const doc: IConversationMessageAdd = {
     conversationId: conversation.id,
