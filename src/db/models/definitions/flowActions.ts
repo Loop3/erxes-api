@@ -21,6 +21,7 @@ export interface IFlowActionValueCondition {
   values: string[];
   action: string;
   value: string;
+  error: string;
 }
 
 export interface IFlowActionValue {

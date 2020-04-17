@@ -150,11 +150,23 @@ const handleMessage = async (msg: IMessageDocument) => {
                 let channel = await Channels.findById(conversation.channelId);
 
                 if (channel && channel.memberIds?.length) {
-                  let position = channel.memberIds.length - 1;
+                  let users = await Users.aggregate([
+                    {
+                      $match: {
+                        _id: { $in: channel.memberIds },
+                        lastSeenAt: {
+                          $gte: moment()
+                            .subtract(61, 'seconds')
+                            .toDate(),
+                        },
+                      },
+                    },
+                    { $sample: { size: 1 } },
+                  ]);
 
-                  position = Math.round(position * Math.random());
-
-                  assignedUserId = channel.memberIds[position];
+                  if (users?.length) {
+                    assignedUserId = users[0]._id;
+                  }
                 }
 
                 if (!assignedUserId) {
@@ -162,13 +174,18 @@ const handleMessage = async (msg: IMessageDocument) => {
                     {
                       $match: {
                         brandIds: { $in: [integration.brandId] },
+                        lastSeenAt: {
+                          $gte: moment()
+                            .subtract(61, 'seconds')
+                            .toDate(),
+                        },
                       },
                     },
                     { $sample: { size: 1 } },
                   ]);
 
                   if (users?.length) {
-                    assignedUserId = users[0].id;
+                    assignedUserId = users[0]._id;
                   }
                 }
 
@@ -217,6 +234,22 @@ const handleMessage = async (msg: IMessageDocument) => {
                         assignedUser,
                       );
                     }
+                  }
+                } else if (condition.error) {
+                  const user = await Users.findById(flow?.assignedUserId);
+
+                  if (user) {
+                    handleSendMessage(
+                      integration,
+                      conversation,
+                      {
+                        conversationId: conversation.id,
+                        flowActionId: flowAction.id,
+                        internal: false,
+                        content: condition.error,
+                      },
+                      user,
+                    );
                   }
                 }
 

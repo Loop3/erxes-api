@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import { EngagesAPI, IntegrationsAPI } from './data/dataSources';
 import resolvers from './data/resolvers';
 import typeDefs from './data/schema';
-import { Conversations, Customers } from './db/models';
+import { Conversations, Customers, Users } from './db/models';
 import { graphqlPubsub } from './pubsub';
 import { addToArray, get, inArray, removeFromArray, set } from './redisClient';
 
@@ -54,6 +54,15 @@ const apolloServer = new ApolloServer({
     };
 
     const user = req.user;
+
+    if (user) {
+      Users.update(
+        { _id: user._id },
+        {
+          lastSeenAt: new Date(),
+        },
+      ).exec();
+    }
 
     if (USE_BRAND_RESTRICTIONS !== 'true') {
       return {
