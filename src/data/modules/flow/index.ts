@@ -145,114 +145,7 @@ const handleMessage = async (msg: IMessageDocument) => {
 
                 break;
               case 'erxes.action.transfer.to.agent':
-                let assignedUserId: string = '';
-
-                let channel = await Channels.findById(conversation.channelId);
-
-                if (channel && channel.memberIds?.length) {
-                  let users = await Users.aggregate([
-                    {
-                      $match: {
-                        _id: { $in: channel.memberIds },
-                        lastSeenAt: {
-                          $gte: moment()
-                            .subtract(61, 'seconds')
-                            .toDate(),
-                        },
-                      },
-                    },
-                    { $sample: { size: 1 } },
-                  ]);
-
-                  if (users?.length) {
-                    assignedUserId = users[0]._id;
-                  }
-                }
-
-                if (!assignedUserId) {
-                  let users = await Users.aggregate([
-                    {
-                      $match: {
-                        brandIds: { $in: [integration.brandId] },
-                        lastSeenAt: {
-                          $gte: moment()
-                            .subtract(61, 'seconds')
-                            .toDate(),
-                        },
-                      },
-                    },
-                    { $sample: { size: 1 } },
-                  ]);
-
-                  if (users?.length) {
-                    assignedUserId = users[0]._id;
-                  }
-                }
-
-                if (assignedUserId) {
-                  const conversations: IConversationDocument[] = await Conversations.assignUserConversation(
-                    [conversation.id],
-                    assignedUserId,
-                  );
-
-                  // notify graphl subscription
-                  publishConversationsChanged([conversation.id], 'assigneeChanged');
-
-                  let assignedUser = await Users.getUser(assignedUserId);
-
-                  for (const conversation of conversations) {
-                    let message = await ConversationMessages.addMessage({
-                      conversationId: conversation._id,
-                      content: `${assignedUser.details?.shortName ||
-                        assignedUser.email} has been assigned to this conversation`,
-                      fromBot: true,
-                    });
-
-                    graphqlPubsub.publish('conversationClientMessageInserted', {
-                      conversationClientMessageInserted: message,
-                    });
-
-                    if (condition.value) {
-                      let content = condition.value;
-                      let details: IDetail = assignedUser.details?.toObject() || {};
-
-                      const keys = Object.keys(details);
-
-                      for (const key of keys) {
-                        content = content.replace(new RegExp(`{{${key}}}`), details[key]);
-                      }
-
-                      handleSendMessage(
-                        integration,
-                        conversation,
-                        {
-                          conversationId: conversation.id,
-                          flowActionId: flowAction.id,
-                          internal: false,
-                          content,
-                        },
-                        assignedUser,
-                      );
-                    }
-                  }
-                } else if (condition.error) {
-                  const user = await Users.findById(flow?.assignedUserId);
-
-                  if (user) {
-                    handleSendMessage(
-                      integration,
-                      conversation,
-                      {
-                        conversationId: conversation.id,
-                        flowActionId: flowAction.id,
-                        internal: false,
-                        content: condition.error,
-                      },
-                      user,
-                    );
-                  }
-                }
-
+                await handleTransferToAgent(flowAction, conversation, integration, condition);
                 return;
               default:
                 break;
@@ -313,6 +206,12 @@ const handleMessage = async (msg: IMessageDocument) => {
         sendNextMessage = true;
 
       break;
+    case 'erxes.action.transfer.to.agent':
+      const condition = JSON.parse(flowAction.value || '{}');
+
+      handleTransferToAgent(flowAction, conversation, integration, condition);
+
+      break;
     case 'erxes.action.execute.autmations.flow':
       sendNextMessage = true;
 
@@ -324,6 +223,152 @@ const handleMessage = async (msg: IMessageDocument) => {
 
   if (sendNextMessage) {
     await handleMessage(msg);
+  }
+};
+
+const handleTransferToAgent = async (
+  flowAction: IFlowActionDocument,
+  conversation: IConversationDocument,
+  integration: IIntegrationDocument,
+  condition: IFlowActionValueCondition,
+) => {
+  let assignedUserId: string = '';
+
+  let channel = await Channels.findById(conversation.channelId);
+
+  if (channel && channel.memberIds?.length) {
+    let users = await Users.aggregate([
+      {
+        $match: {
+          _id: { $in: channel.memberIds },
+          lastSeenAt: {
+            $gte: moment()
+              .subtract(61, 'seconds')
+              .toDate(),
+          },
+        },
+      },
+      { $sample: { size: 1 } },
+    ]);
+
+    if (users?.length) {
+      assignedUserId = users[0]._id;
+    }
+  }
+
+  if (assignedUserId) {
+    const conversations: IConversationDocument[] = await Conversations.assignUserConversation(
+      [conversation.id],
+      assignedUserId,
+    );
+
+    // notify graphl subscription
+    publishConversationsChanged([conversation.id], 'assigneeChanged');
+
+    let assignedUser = await Users.getUser(assignedUserId);
+
+    for (const conversation of conversations) {
+      let message = await ConversationMessages.addMessage({
+        conversationId: conversation._id,
+        content: `${assignedUser.details?.shortName || assignedUser.email} has been assigned to this conversation`,
+        fromBot: true,
+      });
+
+      graphqlPubsub.publish('conversationClientMessageInserted', {
+        conversationClientMessageInserted: message,
+      });
+
+      if (condition.value) {
+        let content = condition.value;
+        let details: IDetail = assignedUser.details?.toObject() || {};
+
+        const keys = Object.keys(details);
+
+        for (const key of keys) {
+          content = content.replace(new RegExp(`{{${key}}}`), details[key]);
+        }
+
+        handleSendMessage(
+          integration,
+          conversation,
+          {
+            conversationId: conversation.id,
+            flowActionId: flowAction.id,
+            internal: false,
+            content,
+          },
+          assignedUser,
+        );
+      }
+    }
+  } else if (condition.error) {
+    let user: IUserDocument | null = null;
+
+    if (channel && channel.memberIds?.length) {
+      let users = await Users.aggregate([
+        {
+          $match: {
+            brandIds: { $in: [integration.brandId] },
+          },
+        },
+        { $sample: { size: 1 } },
+      ]);
+
+      if (users?.length) {
+        user = users[0];
+      }
+    }
+
+    if (!user) {
+      let users = await Users.aggregate([
+        {
+          $match: {
+            brandIds: { $in: [integration.brandId] },
+          },
+        },
+        { $sample: { size: 1 } },
+      ]);
+
+      if (users?.length) {
+        user = users[0];
+      }
+    }
+
+    if (!user) user = await Users.findOne({ isOwner: true });
+
+    if (user) {
+      const conversations: IConversationDocument[] = await Conversations.assignUserConversation(
+        [conversation.id],
+        user._id,
+      );
+
+      // notify graphl subscription
+      publishConversationsChanged([conversation.id], 'assigneeChanged');
+
+      for (const conversation of conversations) {
+        let message = await ConversationMessages.addMessage({
+          conversationId: conversation._id,
+          content: `${user.details?.shortName || user.email} has been assigned to this conversation`,
+          fromBot: true,
+        });
+
+        graphqlPubsub.publish('conversationClientMessageInserted', {
+          conversationClientMessageInserted: message,
+        });
+
+        handleSendMessage(
+          integration,
+          conversation,
+          {
+            conversationId: conversation.id,
+            flowActionId: flowAction.id,
+            internal: false,
+            content: condition.error,
+          },
+          user,
+        );
+      }
+    }
   }
 };
 
