@@ -104,7 +104,7 @@ const apolloServer = new ApolloServer({
 
     return {
       brandIdSelector,
-      docModifier: doc => ({ ...doc, scopeBrandIds }),
+      docModifier: doc => ({ ...doc, scopeBrandIds: scopeBrandIds.filter((c: any) => c?.length) }),
       commonQuerySelector,
       commonQuerySelectorElk,
       userBrandIdsSelector,
