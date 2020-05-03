@@ -28,12 +28,26 @@ import Messages from '../../../db/models/ConversationMessages';
 import { IIntegrationDocument } from '../../../db/models/definitions/integrations';
 import { IDetail, IUserDocument } from '../../../db/models/definitions/users';
 
-const actionWithSendNext = ['erxes.action.send.message', 'erxes.action.define.department'];
+const actionWithSendNext = ['erxes.action.send.message', 'erxes.action.define.department', 'erxes.action.conditional'];
 
-const handleCondition = (condition: IFlowActionValueCondition, content: string = '') => {
+const checkIfIsCondition = (condition: IFlowActionValueCondition, content: string = '') => {
   switch (condition.operator) {
     case '=':
-      return condition.values.includes(content);
+      switch (condition.type) {
+        case 'erxes.conditional.variable':
+          switch (condition.variable.key) {
+            case 'onboarding_active':
+              let not = [0, 6].includes(moment().weekday()) || moment().hour() < 9 || moment().hour() > 18;
+              return (condition.variable.value === '0' && not) || (condition.variable.value === '1' && !not);
+
+            default:
+              break;
+          }
+          break;
+
+        default:
+          return condition.values.includes(content);
+      }
     default:
       return false;
   }
@@ -130,10 +144,10 @@ const handleMessage = async (msg: IMessageDocument) => {
             currentFlowActionId: flowAction?.id,
           });
           break;
-        case 'erxes.action.to.ask':
+        case 'erxes.action.to.ask': {
           const { conditions }: IFlowActionValue = JSON.parse(flowAction.value || '{}');
 
-          const condition = conditions.find(c => handleCondition(c, msg.content));
+          const condition = conditions.find(c => checkIfIsCondition(c, msg.content));
 
           if (condition) {
             switch (condition.action) {
@@ -152,6 +166,32 @@ const handleMessage = async (msg: IMessageDocument) => {
             }
           }
           break;
+        }
+        case 'erxes.action.conditional': {
+          const { conditions }: IFlowActionValue = JSON.parse(flowAction.value || '{}');
+
+          const condition = conditions.find(c => checkIfIsCondition(c, msg.content));
+
+          if (condition) {
+            switch (condition.action) {
+              case 'erxes.action.execute.action':
+                flowAction = await FlowActions.findOne({
+                  flowId: flowAction.flowId,
+                  order: condition.value,
+                });
+
+                break;
+              default:
+                break;
+            }
+          } else {
+            flowAction = await FlowActions.findOne({
+              flowId: flowAction.flowId,
+              order: flowAction.order + 1,
+            });
+          }
+          break;
+        }
         default:
           break;
       }

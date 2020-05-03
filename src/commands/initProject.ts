@@ -97,6 +97,14 @@ connect()
       });
     }
 
+    const conditionType = await FlowActionTypes.findOne({
+      type: 'erxes.action.conditional',
+    });
+
+    const sendMessageType = await FlowActionTypes.findOne({
+      type: 'erxes.action.send.message',
+    });
+
     const askType = await FlowActionTypes.findOne({
       type: 'erxes.action.to.ask',
     });
@@ -116,31 +124,20 @@ connect()
     if (!(await FlowActions.count({ flowId: rootFlow.id }))) {
       await FlowActions.createFlowAction({
         order: 0,
-        type: askType?.type,
+        type: conditionType?.type,
         flowId: rootFlow.id,
-        actionId: askType?.id,
+        actionId: conditionType?.id,
         value: JSON.stringify({
-          content: [
-            'Olá, tudo bem?<br/>' +
-              '<br/>Eu sou a Duda, assistente virtual da DUES! 😃<br/>' +
-              '<br/>Estou aqui para ajudá-lo a ter um atendimento rápido e objetivo<br/>' +
-              '<br/>Vamos começar?<br/>' +
-              '<br/>Primeiro selecione a opção desejada digitando 1 ou 2🤝<br/>' +
-              '<br/><b>1</b>. JÁ SOU CLIENTE - Preciso de ajuda ou tirar dúvidas' +
-              '<br/><b>2</b>. NÃO SOU CLIENTE - Quero saber mais informações sobre formalização de trabalho autônomo através do MEI e ou sobre os serviços da DUES para MEI',
-          ],
           conditions: [
             {
+              type: 'erxes.conditional.variable',
               operator: '=',
-              values: ['1', 'suporte', 'ajuda', 'duvidas'],
+              variable: {
+                key: 'onboarding_active',
+                value: '0',
+              },
               action: 'erxes.action.execute.action',
-              value: '1',
-            },
-            {
-              operator: '=',
-              values: ['2', 'comercial', 'vendas', 'venda', 'formalização', 'mei'],
-              action: 'erxes.action.execute.action',
-              value: '3',
+              value: '6',
             },
           ],
         }),
@@ -148,6 +145,38 @@ connect()
 
       await FlowActions.createFlowAction({
         order: 1,
+        type: askType?.type,
+        flowId: rootFlow.id,
+        actionId: askType?.id,
+        value: JSON.stringify({
+          content: [
+            'Olá, tudo bem?<br/>' +
+              '<br/>Eu sou a Duda, assistente virtual da DUES! 😃<br/>' +
+              '<br/>Estou aqui para ajudá-lo a ter um atendimento mais rápido e objetivo.<br/>' +
+              '<br/>Vamos começar?<br/>' +
+              '<br/>Primeiro selecione a opção desejada digitando 1 ou 2.🤝<br/>' +
+              '<br/>1. <b>JÁ SOU CLIENTE</b> - Preciso de ajuda ou tirar dúvidas.' +
+              '<br/>2. <b>NÃO SOU CLIENTE</b> - Quero saber mais informações sobre formalização de trabalho autônomo através do MEI e ou sobre os serviços da DUES para MEI',
+          ],
+          conditions: [
+            {
+              operator: '=',
+              values: ['1', 'suporte', 'ajuda', 'duvidas'],
+              action: 'erxes.action.execute.action',
+              value: '2',
+            },
+            {
+              operator: '=',
+              values: ['2', 'comercial', 'vendas', 'venda', 'formalização', 'mei'],
+              action: 'erxes.action.execute.action',
+              value: '4',
+            },
+          ],
+        }),
+      });
+
+      await FlowActions.createFlowAction({
+        order: 2,
         flowId: rootFlow.id,
         type: defineDepartmenType?.type,
         actionId: defineDepartmenType?.id,
@@ -155,7 +184,7 @@ connect()
       });
 
       await FlowActions.createFlowAction({
-        order: 2,
+        order: 3,
         flowId: rootFlow.id,
         type: executeFlowType?.type,
         actionId: executeFlowType?.id,
@@ -163,7 +192,7 @@ connect()
       });
 
       await FlowActions.createFlowAction({
-        order: 3,
+        order: 4,
         flowId: rootFlow.id,
         type: defineDepartmenType?.type,
         actionId: defineDepartmenType?.id,
@@ -171,20 +200,36 @@ connect()
       });
 
       await FlowActions.createFlowAction({
-        order: 4,
+        order: 5,
         flowId: rootFlow.id,
         type: transferToAgentType?.type,
         actionId: transferToAgentType?.id,
         value: JSON.stringify({
-          value: 'Você está sendo transferido para o atendente {{shortName}}',
+          value: 'Obrigado pelas informações, aguarde um minuto que estamos transferindo você para a(o) {{shortName}}',
           error:
-            'Ops!! 😊<br/><br/>' +
+            'Ops!!<br/><br/>' +
             'Neste momento estamos com todos os nossos atendentes ocupados.<br/><br/>' +
-            'Mas registre aqui (mensagem ou áudio) o que precisa, que no máximo em 3 horas iremos responder você.<br/><br/>' +
-            'Lembrando que nosso horário de atendimento é das 09:00 às 18:00, de segunda a sexta, exceto feriados.<br/><br/>' +
-            'Agradecemos seu contato, ele é muito importante pra nós.<br/><br/>' +
-            'Até breve!<br/>' +
+            'Mas registre aqui o que precisa por mensagem ou áudio, que o responderemos o mais rápido possível, no máximo em 3 horas, mas normalmente antes.<br/><br/>' +
+            'Agradecemos seu contato, ele é muito importante para nós.<br/><br/>' +
+            'Até breve! 😊<br/>' +
             'Equipe Dues',
+        }),
+      });
+
+      await FlowActions.createFlowAction({
+        order: 6,
+        flowId: rootFlow.id,
+        type: sendMessageType?.type,
+        actionId: sendMessageType?.id,
+        value: JSON.stringify({
+          content: [
+            'Olá, tudo bem?<br/><br/>' +
+              'Bom, neste momento não estamos ONLINE pois o nosso <b>horário de atendimento é das 09:00 às 18:00, exceto sábados, domingos e feriados.</b><br/><br/>' +
+              'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que assim que retornarmos o responderemos.<br/><br/>' +
+              '<b>Lembramos que nosso atendimento é somente ONLINE, ou seja, somente através de mensagens por aplicativos ou e-mails, mas caso necessário e em situações pontuais, nós ligaremos para você.</b><br/><br/>' +
+              'Até breve! 😊<br/>' +
+              'Equipe Dues',
+          ],
         }),
       });
     }
@@ -198,28 +243,28 @@ connect()
         value: JSON.stringify({
           content: [
             '<br/>Legal, por favor digite a opção desejada:' +
-              '<br/><b>1</b>. Informações sobre minha MEI (Impostos, Alterações, Guias, etc...)' +
-              '<br/><b>2</b>. Preciso de Declaração de Renda' +
-              '<br/><b>3</b>. Informações sobre o Seguro de Vida' +
-              '<br/><b>4</b>. Informações sobre Imposto de Renda de Pessoa Física (IRPF)' +
-              '<br/><b>5</b>. Suporte para acesso a financiamentos' +
-              '<br/><b>6</b>. Suporte para acesso a planos de saúde , odontológicos e seguros' +
-              '<br/><b>7</b>. Suporte para acesso a serviços do INSS (esta doente ou se acidentou)' +
-              '<br/><b>8</b>. Nenhum dos assuntos acima, quero falar com um atendente',
+              '<br/><b>1</b>. Minha MEI (Impostos, Alterações, Guias etc.);' +
+              '<br/><b>2</b>. Declaração de Renda;' +
+              '<br/><b>3</b>. Seguro de Vida;' +
+              '<br/><b>4</b>. Imposto de Renda de Pessoa Física (IRPF);' +
+              '<br/><b>5</b>. Suporte para acesso a Financiamentos;' +
+              '<br/><b>6</b>. Suporte para acesso a Planos de Saúde , Odontológicos e Seguros;' +
+              '<br/><b>7</b>. Suporte para acesso a serviços do INSS (esta doente ou se acidentou);' +
+              '<br/><b>8</b>. Nenhum dos assuntos acima;',
           ],
           conditions: [
             {
               operator: '=',
               values: ['1', '2', '3', '4', '5', '6', '7', '8', 'falar', 'atendente', 'atendimento'],
               action: 'erxes.action.transfer.to.agent',
-              value: 'Você está sendo transferido para o atendente {{shortName}}',
+              value:
+                'Obrigado pelas informações, aguarde um minuto que estamos transferindo você para a(o) {{shortName}}',
               error:
-                'Ops!! 😊<br/><br/>' +
+                'Ops!!<br/><br/>' +
                 'Neste momento estamos com todos os nossos atendentes ocupados.<br/><br/>' +
-                'Mas registre aqui (mensagem ou áudio) o que precisa, que no máximo em 3 horas iremos responder você.<br/><br/>' +
-                'Lembrando que nosso horário de atendimento é das 09:00 às 18:00, de segunda a sexta, exceto feriados.<br/><br/>' +
-                'Agradecemos seu contato, ele é muito importante pra nós.<br/><br/>' +
-                'Até breve!<br/>' +
+                'Mas registre aqui o que precisa por mensagem ou áudio, que o responderemos o mais rápido possível, no máximo em 3 horas, mas normalmente antes.<br/><br/>' +
+                'Agradecemos seu contato, ele é muito importante para nós.<br/><br/>' +
+                'Até breve! 😊<br/>' +
                 'Equipe Dues',
             },
           ],

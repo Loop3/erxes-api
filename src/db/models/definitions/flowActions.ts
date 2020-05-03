@@ -18,9 +18,11 @@ export interface IFlowActionDocument extends IFlowAction, Document {
 
 export interface IFlowActionValueCondition {
   operator: string;
+  type: string;
   values: string[];
   action: string;
   value: string;
+  variable: any;
   error: string;
 }
 
