@@ -37,7 +37,9 @@ const checkIfIsCondition = (condition: IFlowActionValueCondition, content: strin
         case 'erxes.conditional.variable':
           switch (condition.variable.key) {
             case 'onboarding_active':
-              let not = [0, 6].includes(moment().weekday()) || moment().hour() < 9 || moment().hour() > 18;
+              let now = moment.utc();
+              now = now.utcOffset(-180);
+              let not = [0, 6].includes(now.weekday()) || now.hour() < 9 || now.hour() > 18;
               return (condition.variable.value === '0' && not) || (condition.variable.value === '1' && !not);
 
             default:
