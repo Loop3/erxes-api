@@ -5,7 +5,7 @@ import subprocess
 from dotenv import load_dotenv
 from elasticsearch import Elasticsearch
 import pymongo
-print('test')
+
 load_dotenv()
 
 MONGO_URL = os.getenv('MONGO_URL')
