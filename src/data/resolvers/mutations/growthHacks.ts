@@ -86,6 +86,17 @@ const growthHackMutations = {
       contentType: MODULE_NAMES.GROWTH_HACK,
     };
 
+    if (doc.status && oldGrowthHack.status && oldGrowthHack.status !== doc.status) {
+      const activityAction = doc.status === 'active' ? 'activated' : 'archived';
+
+      await ActivityLogs.createArchiveLog({
+        item: updatedGrowthHack,
+        contentType: 'growthHack',
+        action: activityAction,
+        userId: user._id,
+      });
+    }
+
     if (doc.assignedUserIds && doc.assignedUserIds.length > 0 && oldGrowthHack.assignedUserIds) {
       const { addedUserIds, removedUserIds } = checkUserIds(
         oldGrowthHack.assignedUserIds || [],
@@ -121,6 +132,7 @@ const growthHackMutations = {
       graphqlPubsub.publish('growthHacksChanged', {
         growthHacksChanged: {
           _id: updatedGrowthHack._id,
+          name: updatedGrowthHack.name,
         },
       });
 
@@ -169,16 +181,19 @@ const growthHackMutations = {
    */
   async growthHacksChange(
     _root,
-    { _id, destinationStageId }: { _id: string; destinationStageId: string },
+    { _id, destinationStageId, order }: { _id: string; destinationStageId: string; order: number },
     { user }: { user: IUserDocument },
   ) {
     const growthHack = await GrowthHacks.getGrowthHack(_id);
 
-    await GrowthHacks.updateGrowthHack(_id, {
+    const extendedDoc = {
       modifiedAt: new Date(),
       modifiedBy: user._id,
       stageId: destinationStageId,
-    });
+      order,
+    };
+
+    const updatedGrowthHack = await GrowthHacks.updateGrowthHack(_id, extendedDoc);
 
     const { content, action } = await itemsChange(user._id, growthHack, MODULE_NAMES.GROWTH_HACK, destinationStageId);
 
@@ -190,6 +205,16 @@ const growthHackMutations = {
       action,
       contentType: MODULE_NAMES.GROWTH_HACK,
     });
+
+    await putUpdateLog(
+      {
+        type: MODULE_NAMES.GROWTH_HACK,
+        object: growthHack,
+        newData: extendedDoc,
+        updatedDocument: updatedGrowthHack,
+      },
+      user,
+    );
 
     // if move between stages
     if (destinationStageId !== growthHack.stageId) {
@@ -277,8 +302,15 @@ const growthHackMutations = {
     return clone;
   },
 
-  async growthHacksArchive(_root, { stageId }: { stageId: string }) {
-    await GrowthHacks.updateMany({ stageId }, { $set: { status: BOARD_STATUSES.ARCHIVED } });
+  async growthHacksArchive(_root, { stageId }: { stageId: string }, { user }: IContext) {
+    const updatedGrowthHack = await GrowthHacks.updateMany({ stageId }, { $set: { status: BOARD_STATUSES.ARCHIVED } });
+
+    await ActivityLogs.createArchiveLog({
+      item: updatedGrowthHack,
+      contentType: 'growthHack',
+      action: 'archived',
+      userId: user._id,
+    });
 
     return 'ok';
   },
