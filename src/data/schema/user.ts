@@ -66,6 +66,7 @@ export const types = `
     isOwner: Boolean
     permissionActions: JSON
     configs: JSON
+    lastSeenAt: Date
   }
 
   type UserConversationListResponse {

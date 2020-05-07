@@ -153,7 +153,7 @@ def put_mappings(index, mapping):
         print(e)
 
 
-db_name = pymongo.uri_parser.parse_uri(MONGO_URL)['database']
+db_name = pymongo.uri_parser.parse_uri(MONGO_URL)['database'].lower()
 
 put_mappings('%s__customers' % db_name, customer_mapping)
 put_mappings('%s__companies' % db_name, company_mapping)

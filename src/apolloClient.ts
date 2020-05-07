@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import { EngagesAPI, IntegrationsAPI } from './data/dataSources';
 import resolvers from './data/resolvers';
 import typeDefs from './data/schema';
-import { Conversations, Customers } from './db/models';
+import { Conversations, Customers, Users } from './db/models';
 import { graphqlPubsub } from './pubsub';
 import { addToArray, get, inArray, removeFromArray, set } from './redisClient';
 
@@ -55,6 +55,15 @@ const apolloServer = new ApolloServer({
 
     const user = req.user;
 
+    if (user) {
+      Users.update(
+        { _id: user._id },
+        {
+          lastSeenAt: new Date(),
+        },
+      ).exec();
+    }
+
     if (USE_BRAND_RESTRICTIONS !== 'true') {
       return {
         brandIdSelector: {},
@@ -81,7 +90,11 @@ const apolloServer = new ApolloServer({
         scopeBrandIds = brandIds;
       }
 
-      if (!user.isOwner) {
+      if (!user.isOwner && scopeBrandIds.length) {
+        // Select non-existent or empty arrays too
+        scopeBrandIds.push(null);
+        scopeBrandIds.push([]);
+
         brandIdSelector = { _id: { $in: scopeBrandIds } };
         commonQuerySelector = { scopeBrandIds: { $in: scopeBrandIds } };
         commonQuerySelectorElk = { terms: { scopeBrandIds } };
@@ -91,7 +104,7 @@ const apolloServer = new ApolloServer({
 
     return {
       brandIdSelector,
-      docModifier: doc => ({ ...doc, scopeBrandIds }),
+      docModifier: doc => ({ ...doc, scopeBrandIds: scopeBrandIds.filter((c: any) => c?.length) }),
       commonQuerySelector,
       commonQuerySelectorElk,
       userBrandIdsSelector,

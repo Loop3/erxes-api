@@ -133,7 +133,10 @@ describe('PipelineTemplates mutations', () => {
 
     // Creating test data
     const template = await pipelineTemplateFactory({
-      stages: [{ name: 'stage 1', formId: form1._id }, { name: 'stage 2', formId: form2._id }],
+      stages: [
+        { name: 'stage 1', formId: form1._id },
+        { name: 'stage 2', formId: form2._id },
+      ],
     });
 
     const duplicated = await graphqlRequest(mutation, 'pipelineTemplatesDuplicate', { _id: template._id });

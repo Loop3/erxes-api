@@ -70,15 +70,20 @@ export const receiveRpcMessage = async msg => {
 
     const assignedUserId = user ? user._id : null;
 
-    if (conversationId) {
-      await Conversations.updateConversation(conversationId, { content, assignedUserId });
+    let conversation = await Conversations.findById(conversationId);
+
+    if (conversation && conversation.status !== 'closed') {
+      await Conversations.updateConversation(conversationId, {
+        content,
+        assignedUserId: conversation.assignedUserId || assignedUserId,
+      });
 
       return sendSuccess({ _id: conversationId });
     }
 
     doc.assignedUserId = assignedUserId;
 
-    const conversation = await Conversations.createConversation(doc);
+    conversation = await Conversations.createConversation(doc);
 
     return sendSuccess({ _id: conversation._id });
   }
@@ -86,7 +91,12 @@ export const receiveRpcMessage = async msg => {
   if (action === 'create-conversation-message') {
     const message = await ConversationMessages.createMessage(doc);
 
-    const conversationDoc: { status: string; readUserIds: string[]; content?: string; updatedAt?: Date } = {
+    const conversationDoc: {
+      status: string;
+      readUserIds: string[];
+      content?: string;
+      updatedAt?: Date;
+    } = {
       // Reopen its conversation if it's closed
       status: doc.unread || doc.unread === undefined ? CONVERSATION_STATUSES.OPEN : CONVERSATION_STATUSES.CLOSED,
 
