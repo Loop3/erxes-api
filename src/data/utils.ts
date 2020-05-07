@@ -15,6 +15,14 @@ import { sendMessage } from '../messageBroker';
 import { graphqlPubsub } from '../pubsub';
 import { get, set } from '../redisClient';
 
+export const initFirebase = (value: string): void => {
+  const serviceAccount = JSON.parse(value);
+
+  if (serviceAccount.private_key) {
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  }
+};
+
 /*
  * Check that given file is not harmful
  */
@@ -26,7 +34,7 @@ export const checkFile = async (file, source?: string) => {
   const { size } = file;
 
   // 20mb
-  if (size > 20000000) {
+  if (size > 20 * 1024 * 1024) {
     return 'Too large file';
   }
 
@@ -359,22 +367,20 @@ export const createTransporter = async ({ ses }) => {
   });
 };
 
-/**
- * Send email
- */
-export const sendEmail = async ({
-  toEmails = [],
-  fromEmail,
-  title,
-  template = {},
-  modifier,
-}: {
+export interface IEmailParams {
   toEmails?: string[];
   fromEmail?: string;
   title?: string;
   template?: { name?: string; data?: any; isCustom?: boolean };
   modifier?: (data: any, email: string) => void;
-}) => {
+}
+
+/**
+ * Send email
+ */
+export const sendEmail = async (params: IEmailParams) => {
+  const { toEmails = [], fromEmail, title, template = {}, modifier } = params;
+
   const NODE_ENV = getEnv({ name: 'NODE_ENV' });
   const DEFAULT_EMAIL_SERVICE = await getConfig('DEFAULT_EMAIL_SERVICE', 'SES');
   const COMPANY_EMAIL_FROM = await getConfig('COMPANY_EMAIL_FROM', '');
@@ -395,7 +401,7 @@ export const sendEmail = async ({
     return debugEmail(e.message);
   }
 
-  const { isCustom, data, name } = template;
+  const { isCustom, data = {}, name } = template;
 
   // for unsubscribe url
   data.domain = MAIN_APP_DOMAIN;
@@ -406,7 +412,7 @@ export const sendEmail = async ({
     }
 
     // generate email content by given template
-    let html = await applyTemplate(data, name || '');
+    let html = await applyTemplate(data, name || 'base');
 
     if (!isCustom) {
       html = await applyTemplate({ content: html }, 'base');
@@ -594,26 +600,6 @@ export const sendRequest = async (
   }
 };
 
-/**
- * Send request to crons api
- */
-export const fetchCronsApi = ({ path, method, body, params }: IRequestParams) => {
-  return sendRequest(
-    { url: `${getSubServiceDomain({ name: 'CRONS_API_DOMAIN' })}${path}`, method, body, params },
-    'Failed to connect crons api. Check CRONS_API_DOMAIN env or crons api is not running',
-  );
-};
-
-/**
- * Send request to workers api
- */
-export const fetchWorkersApi = ({ path, method, body, params }: IRequestParams) => {
-  return sendRequest(
-    { url: `${getSubServiceDomain({ name: 'WORKERS_API_DOMAIN' })}${path}`, method, body, params },
-    'Failed to connect workers api. Check WORKERS_API_DOMAIN env or workers api is not running',
-  );
-};
-
 export const registerOnboardHistory = ({ type, user }: { type: string; user: IUserDocument }) =>
   OnboardingHistories.getOrCreate({ type, user })
     .then(({ status }) => {
@@ -752,8 +738,6 @@ export default {
   sendMobileNotification,
   readFile,
   createTransporter,
-  fetchCronsApi,
-  fetchWorkersApi,
 };
 
 export const cleanHtml = (content?: string) => strip(content || '').substring(0, 100);
@@ -916,8 +900,6 @@ export const getSubServiceDomain = ({ name }: { name: string }): string => {
   const defaultMappings = {
     WIDGETS_DOMAIN: `${MAIN_APP_DOMAIN}/widgets`,
     INTEGRATIONS_API_DOMAIN: `${MAIN_APP_DOMAIN}/integrations`,
-    CRONS_API_DOMAIN: `${MAIN_APP_DOMAIN}/crons`,
-    WORKERS_API_DOMAIN: `${MAIN_APP_DOMAIN}/workers`,
     LOGS_API_DOMAIN: `${MAIN_APP_DOMAIN}/logs`,
     ENGAGES_API_DOMAIN: `${MAIN_APP_DOMAIN}/engages`,
   };

@@ -71,6 +71,7 @@ const engageDataRuleSchema = new Schema(
 
 const engageDataSchema = new Schema(
   {
+    engageKind: field({ type: String }),
     messageId: field({ type: String }),
     brandId: field({ type: String }),
     content: field({ type: String }),
