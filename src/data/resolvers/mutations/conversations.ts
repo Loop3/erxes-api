@@ -26,6 +26,7 @@ export interface IConversationMessageAdd {
   mentionedUserIds?: string[];
   internal?: boolean;
   attachments?: any;
+  flowActionId?: string;
 }
 
 interface IReplyFacebookComment {

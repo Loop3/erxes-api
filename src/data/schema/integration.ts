@@ -17,6 +17,8 @@ export const types = `
     brand: Brand
     form: Form
     channels: [Channel]
+    
+    flowId: String
   }
 
   type integrationsTotalCount {
@@ -93,7 +95,8 @@ export const queries = `
     searchValue: String,
     channelId: String,
     brandId: String,
-    tag: String
+    tag: String,    
+    flowId: String
   ): [Integration]
 
   integrationsGetUsedTypes: [integrationsGetUsedTypes]

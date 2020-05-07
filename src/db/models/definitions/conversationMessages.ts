@@ -40,6 +40,7 @@ export interface IMessage {
   messengerAppData?: any;
   engageData?: IEngageData;
   contentType?: string;
+  flowActionId?: string;
 }
 
 export interface IMessageDocument extends IMessage, Document {
@@ -102,4 +103,5 @@ export const messageSchema = new Schema({
     enum: MESSAGE_TYPES.ALL,
     default: MESSAGE_TYPES.TEXT,
   }),
+  flowActionId: field({ type: String, index: true }),
 });

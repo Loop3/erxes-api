@@ -101,6 +101,7 @@ export interface IIntegration {
   messengerData?: IMessengerData;
   uiOptions?: IUiOptions;
   isActive?: boolean;
+  flowId?: string;
 }
 
 export interface IIntegrationDocument extends IIntegration, Document {
@@ -292,6 +293,7 @@ export const integrationSchema = new Schema({
   formId: field({ type: String, label: 'Form' }),
   leadData: field({ type: leadDataSchema, label: 'Lead data' }),
   isActive: field({ type: Boolean, optional: true, default: true, label: 'Is active' }),
+  flowId: field({ type: String, label: 'Flow' }),
   // TODO: remove
   formData: field({ type: leadDataSchema }),
   messengerData: field({ type: messengerDataSchema }),

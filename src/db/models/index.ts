@@ -34,6 +34,9 @@ import Tags from './Tags';
 import Tasks from './Tasks';
 import Tickets from './Tickets';
 import Users from './Users';
+import FlowActionTypes from './FlowActionTypes';
+import FlowActions from './FlowActions';
+import Flows from './Flows';
 
 export {
   EmailDeliveries,
@@ -82,4 +85,7 @@ export {
   PipelineLabels,
   Checklists,
   ChecklistItems,
+  FlowActionTypes,
+  FlowActions,
+  Flows,
 };
