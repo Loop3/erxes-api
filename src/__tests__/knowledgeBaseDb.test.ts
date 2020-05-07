@@ -209,7 +209,7 @@ describe('test knowledge base models', () => {
         _id: topicB._id.toString(),
       });
 
-      if (!topicAObj || !topicAObj.categoryIds || (!topicBObj || !topicBObj.categoryIds)) {
+      if (!topicAObj || !topicAObj.categoryIds || !topicBObj || !topicBObj.categoryIds) {
         throw new Error('Topic not found');
       }
 
@@ -277,7 +277,7 @@ describe('test knowledge base models', () => {
         _id: topicB._id.toString(),
       });
 
-      if (!topicAObj || !topicAObj.categoryIds || (!topicBObj || !topicBObj.categoryIds)) {
+      if (!topicAObj || !topicAObj.categoryIds || !topicBObj || !topicBObj.categoryIds) {
         throw new Error('Topic not found');
       }
 
@@ -395,7 +395,7 @@ describe('test knowledge base models', () => {
         _id: categoryB._id.toString(),
       });
 
-      if (!categoryAObj || !categoryAObj.articleIds || (!categoryBObj || !categoryBObj.articleIds)) {
+      if (!categoryAObj || !categoryAObj.articleIds || !categoryBObj || !categoryBObj.articleIds) {
         throw new Error('Topic not found');
       }
 
@@ -449,7 +449,7 @@ describe('test knowledge base models', () => {
         _id: categoryB._id.toString(),
       });
 
-      if (!categoryAObj || !categoryAObj.articleIds || (!categoryBObj || !categoryBObj.articleIds)) {
+      if (!categoryAObj || !categoryAObj.articleIds || !categoryBObj || !categoryBObj.articleIds) {
         throw new Error('Topic not found');
       }
 

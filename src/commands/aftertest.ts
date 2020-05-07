@@ -13,10 +13,10 @@ const TEST_MONGO_URL = process.env.TEST_MONGO_URL || 'mongodb://localhost/test';
 mongoose.set('useFindAndModify', false);
 
 const removeDbs = async () => {
-  await mongoose.connect(
-    TEST_MONGO_URL.replace('test', `erxes-test-${Math.random()}`).replace(/\./g, ''),
-    { useNewUrlParser: true, useCreateIndex: true },
-  );
+  await mongoose.connect(TEST_MONGO_URL.replace('test', `erxes-test-${Math.random()}`).replace(/\./g, ''), {
+    useNewUrlParser: true,
+    useCreateIndex: true,
+  });
 
   const result = await mongoose.connection.db.admin().command({
     listDatabases: 1,
@@ -27,10 +27,10 @@ const removeDbs = async () => {
   const promises: any[] = [];
 
   for (const { name } of result.databases) {
-    const db = await mongoose.connect(
-      TEST_MONGO_URL.replace('test', name),
-      { useNewUrlParser: true, useCreateIndex: true },
-    );
+    const db = await mongoose.connect(TEST_MONGO_URL.replace('test', name), {
+      useNewUrlParser: true,
+      useCreateIndex: true,
+    });
 
     promises.push(db.connection.dropDatabase());
   }
