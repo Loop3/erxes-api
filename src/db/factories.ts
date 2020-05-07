@@ -51,18 +51,17 @@ import {
   FlowActions,
   Flows,
 } from './models';
+import { ICustomField } from './models/definitions/common';
 import {
   ACTIVITY_CONTENT_TYPES,
   BOARD_STATUSES,
   BOARD_TYPES,
   CONVERSATION_STATUSES,
-  EMAIL_VALIDATION_STATUSES,
   FORM_TYPES,
   MESSAGE_TYPES,
   NOTIFICATION_TYPES,
   PROBABILITY,
   PRODUCT_TYPES,
-  STATUSES,
 } from './models/definitions/constants';
 import { IEmail, IMessenger } from './models/definitions/engages';
 import { IMessengerAppCrendentials } from './models/definitions/messengerApps';
@@ -422,7 +421,7 @@ export const companyFactory = (params: ICompanyFactoryInput = {}) => {
     website: params.website || faker.internet.domainName(),
     tagIds: params.tagIds || [],
     plan: params.plan || faker.random.word(),
-    status: params.status || STATUSES.ACTIVE,
+    status: params.status || 'Active',
     phones: params.phones || [],
     emails: params.emails || [],
     scopeBrandIds: params.scopeBrandIds || [],
@@ -473,6 +472,7 @@ interface ICustomerFactoryInput {
   deviceTokens?: string[];
   emailValidationStatus?: string;
   mergedIds?: string[];
+  relatedIntegrationIds?: string[];
 }
 
 export const customerFactory = async (params: ICustomerFactoryInput = {}, useModelMethod = false) => {
@@ -490,20 +490,21 @@ export const customerFactory = async (params: ICustomerFactoryInput = {}, useMod
     emails: params.emails || [],
     phones: params.phones || [],
     leadStatus: params.leadStatus || 'new',
-    status: params.status || STATUSES.ACTIVE,
+    status: params.status || 'Active',
     lastSeenAt: faker.date.between(createdAt, new Date()),
     isOnline: params.isOnline || false,
     sessionCount: faker.random.number(),
-    customFieldsData: params.customFieldsData || {},
-    trackedData: params.trackedData || {},
+    customFieldsData: params.customFieldsData || [],
+    trackedData: params.trackedData || [],
     tagIds: params.tagIds || [Random.id()],
     ownerId: params.ownerId || Random.id(),
-    emailValidationStatus: params.emailValidationStatus || EMAIL_VALIDATION_STATUSES.UNKNOWN,
+    emailValidationStatus: params.emailValidationStatus || 'unknown',
     profileScore: params.profileScore || 0,
     code: await getUniqueValue(Customers, 'code', params.code),
     visitorContactInfo: params.visitorContactInfo,
     deviceTokens: params.deviceTokens || [],
     mergedIds: params.mergedIds || [],
+    relatedIntegrationIds: params.relatedIntegrationIds || [],
   };
 
   if (useModelMethod) {
@@ -791,11 +792,13 @@ export const knowledgeBaseTopicFactory = async (params: IKnowledgeBaseTopicFacto
     color: params.color,
   };
 
-  return KnowledgeBaseTopics.create({
-    ...doc,
-    ...params,
-    userId: params.userId || faker.random.word(),
-  });
+  return KnowledgeBaseTopics.createDoc(
+    {
+      ...doc,
+      ...params,
+    },
+    params.userId || faker.random.word(),
+  );
 };
 
 interface IKnowledgeBaseCategoryFactoryInput {
@@ -1093,7 +1096,7 @@ interface IProductFactoryInput {
   description?: string;
   tagIds?: string[];
   categoryId?: string;
-  customFieldsData?: object;
+  customFieldsData?: ICustomField[];
 }
 
 export const productFactory = async (params: IProductFactoryInput = {}) => {

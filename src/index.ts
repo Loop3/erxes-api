@@ -1,9 +1,7 @@
-import * as bodyParser from 'body-parser';
 import * as cookieParser from 'cookie-parser';
 import * as cors from 'cors';
 import * as dotenv from 'dotenv';
 import * as express from 'express';
-import * as formidable from 'formidable';
 import * as fs from 'fs';
 import { createServer } from 'http';
 import * as mongoose from 'mongoose';
@@ -14,7 +12,7 @@ import apolloServer from './apolloClient';
 import { buildFile } from './data/modules/fileExporter/exporter';
 import insightExports from './data/modules/insights/insightExports';
 import {
-  checkFile,
+  authCookieOptions,
   deleteFile,
   frontendEnv,
   getEnv,
@@ -22,17 +20,16 @@ import {
   handleUnsubscription,
   readFileRequest,
   registerOnboardHistory,
-  uploadFile,
 } from './data/utils';
 import { connect } from './db/connection';
 import { debugBase, debugExternalApi, debugInit } from './debuggers';
 import { identifyCustomer, trackCustomEvent, trackViewPageEvent, updateCustomerProperty } from './events';
-import './messageBroker';
+import { initConsumer } from './messageBroker';
+import { importer, uploader } from './middlewares/fileMiddleware';
 import userMiddleware from './middlewares/userMiddleware';
 import widgetsMiddleware from './middlewares/widgetsMiddleware';
 import { initRedis } from './redisClient';
-
-initRedis();
+import init from './startup';
 
 // load environment variables
 dotenv.config();
@@ -47,32 +44,12 @@ const MAIN_APP_DOMAIN = getEnv({ name: 'MAIN_APP_DOMAIN' });
 const WIDGETS_DOMAIN = getSubServiceDomain({ name: 'WIDGETS_DOMAIN' });
 const INTEGRATIONS_API_DOMAIN = getSubServiceDomain({ name: 'INTEGRATIONS_API_DOMAIN' });
 
-// firebase app initialization
-fs.exists(path.join(__dirname, '..', '/google_cred.json'), exists => {
-  if (!exists) {
-    return;
-  }
-
-  const admin = require('firebase-admin').default;
-  const serviceAccount = require('../google_cred.json');
-  const firebaseServiceAccount = serviceAccount;
-
-  if (firebaseServiceAccount.private_key) {
-    admin.initializeApp({
-      credential: admin.credential.cert(firebaseServiceAccount),
-    });
-  }
-});
-
-// connect to mongo database
-connect();
-
 const app = express();
 
 app.disable('x-powered-by');
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.urlencoded());
 app.use(
-  bodyParser.json({
+  express.json({
     limit: '15mb',
   }),
 );
@@ -84,6 +61,16 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+app.get('/set-frontend-cookies', async (req: any, res) => {
+  const envMaps = JSON.parse(req.query.envs || '{}');
+
+  for (const key of Object.keys(envMaps)) {
+    res.cookie(key, envMaps[key], authCookieOptions(req.secure));
+  }
+
+  return res.send('success');
+});
 
 app.get('/script-manager', widgetsMiddleware);
 
@@ -202,7 +189,7 @@ app.get('/read-mail-attachment', async (req: any, res) => {
   const integrationPath = kind.includes('nylas') ? 'nylas' : kind;
 
   res.redirect(
-    `${INTEGRATIONS_API_DOMAIN}/${integrationPath}/get-attachment?messageId=${messageId}&attachmentId=${attachmentId}&integrationId=${integrationId}&filename=${filename}&contentType=${contentType}`,
+    `${INTEGRATIONS_API_DOMAIN}/${integrationPath}/get-attachment?messageId=${messageId}&attachmentId=${attachmentId}&integrationId=${integrationId}&filename=${filename}&contentType=${contentType}&userId=${req.user._id}`,
   );
 });
 
@@ -222,49 +209,7 @@ app.post('/delete-file', async (req: any, res) => {
   return res.status(500).send(status);
 });
 
-// file upload
-app.post('/upload-file', async (req: any, res, next) => {
-  if (req.query.kind === 'nylas') {
-    debugExternalApi(`Pipeing request to ${INTEGRATIONS_API_DOMAIN}`);
-
-    return req.pipe(
-      request
-        .post(`${INTEGRATIONS_API_DOMAIN}/nylas/upload`)
-        .on('response', response => {
-          if (response.statusCode !== 200) {
-            return next(response.statusMessage);
-          }
-
-          return response.pipe(res);
-        })
-        .on('error', e => {
-          debugExternalApi(`Error from pipe ${e.message}`);
-          next(e);
-        }),
-    );
-  }
-
-  const form = new formidable.IncomingForm();
-
-  form.parse(req, async (_error, _fields, response) => {
-    const file = response.file || response.upload;
-
-    // check file ====
-    const status = await checkFile(file, req.headers.source);
-
-    if (status === 'ok') {
-      try {
-        const result = await uploadFile(frontendEnv({ name: 'API_URL', req }), file, response.upload ? true : false);
-
-        return res.send(result);
-      } catch (e) {
-        return res.status(500).send(filterXSS(e.message));
-      }
-    }
-
-    return res.status(500).send(status);
-  });
-});
+app.post('/upload-file', uploader);
 
 // redirect to integration
 app.get('/connect-integration', async (req: any, res, _next) => {
@@ -274,42 +219,11 @@ app.get('/connect-integration', async (req: any, res, _next) => {
 
   const { link, kind } = req.query;
 
-  return res.redirect(`${INTEGRATIONS_API_DOMAIN}/${link}?kind=${kind}`);
+  return res.redirect(`${INTEGRATIONS_API_DOMAIN}/${link}?kind=${kind}&userId=${req.user._id}`);
 });
 
 // file import
-app.post('/import-file', async (req: any, res, next) => {
-  // require login
-  if (!req.user) {
-    return res.end('foribidden');
-  }
-
-  const WORKERS_API_DOMAIN = getSubServiceDomain({ name: 'WORKERS_API_DOMAIN' });
-
-  debugExternalApi(`Pipeing request to ${WORKERS_API_DOMAIN}`);
-
-  try {
-    const result = await req.pipe(
-      request
-        .post(`${WORKERS_API_DOMAIN}/import-file`)
-        .on('response', response => {
-          if (response.statusCode !== 200) {
-            return next(response.statusMessage);
-          }
-
-          return response.pipe(res);
-        })
-        .on('error', e => {
-          debugExternalApi(`Error from pipe ${e.message}`);
-          next(e);
-        }),
-    );
-
-    return result;
-  } catch (e) {
-    return res.json({ status: 'error', message: e.message });
-  }
-});
+app.post('/import-file', importer);
 
 // unsubscribe
 app.get('/unsubscribe', async (req: any, res) => {
@@ -364,6 +278,23 @@ const PORT = getEnv({ name: 'PORT' });
 apolloServer.installSubscriptionHandlers(httpServer);
 
 httpServer.listen(PORT, () => {
+  // connect to mongo database
+  connect().then(async () => {
+    initConsumer().catch(e => {
+      debugBase(`Error ocurred during rabbitmq init ${e.message}`);
+    });
+
+    initRedis();
+
+    init()
+      .then(() => {
+        debugBase('Startup successfully started');
+      })
+      .catch(e => {
+        debugBase(`Error occured while starting init: ${e.message}`);
+      });
+  });
+
   debugInit(`GraphQL Server is now running on ${PORT}`);
 });
 
