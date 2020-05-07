@@ -273,6 +273,7 @@ const conversationMutations = {
     // send reply to whatsapp
     if (kind === KIND_CHOICES.WHATSAPP) {
       requestName = 'replyWhatsApp';
+    }
 
     if (kind === KIND_CHOICES.WHATSPRO) {
       requestName = 'replyWhatsPro';
