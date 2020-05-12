@@ -26,6 +26,9 @@ nestedType = {
 }
 
 customer_mapping = {
+    'createdAt': {
+        'type': 'date',
+    },
     'state': {
         'type': 'keyword',
     },
@@ -71,6 +74,9 @@ customer_mapping = {
 }
 
 company_mapping = {
+    'createdAt': {
+        'type': 'date',
+    },
     'primaryEmail': {
         'type': 'text',
         'analyzer': 'uax_url_email_analyzer',
