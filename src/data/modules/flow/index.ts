@@ -505,6 +505,7 @@ const handleSendMessage = async (
     doc,
     { IntegrationsAPI: new IntegrationsAPI() },
     action,
+    message._id,
   );
 
   const dbMessage = await ConversationMessages.getMessage(message._id);
@@ -525,6 +526,7 @@ const sendConversationToIntegrations = (
   doc: IConversationMessageAdd,
   dataSources: any,
   action?: string,
+  messageId?: string,
 ) => {
   if (type === 'facebook') {
     return sendMessage('erxes-api:integrations-notification', {
@@ -550,6 +552,7 @@ const sendConversationToIntegrations = (
     return dataSources.IntegrationsAPI[requestName]({
       conversationId,
       integrationId,
+      messageId,
       content: strip(doc.content),
       attachments: doc.attachments || [],
     });

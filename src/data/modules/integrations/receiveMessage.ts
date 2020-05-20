@@ -127,6 +127,36 @@ export const receiveRpcMessage = async msg => {
     return sendSuccess({ _id: message._id });
   }
 
+  if (action === 'update-conversation-message') {
+    const message = await ConversationMessages.findById(doc.id);
+
+    if (!message) return sendSuccess({ _id: doc.id });
+
+    if (!message.status || message.status < doc.status) message.status = doc.status;
+
+    await ConversationMessages.updateOne({ _id: message._id }, { status: message.status, createdAt: doc.createdAt });
+
+    const conversationDoc: {
+      updatedAt?: Date;
+    } = {};
+
+    if (doc.createdAt) {
+      conversationDoc.updatedAt = doc.createdAt;
+    }
+
+    await Conversations.updateConversation(message.conversationId, conversationDoc);
+
+    graphqlPubsub.publish('conversationClientMessageInserted', {
+      conversationClientMessageInserted: message,
+    });
+
+    graphqlPubsub.publish('conversationMessageInserted', {
+      conversationMessageInserted: message,
+    });
+
+    return sendSuccess({ _id: doc.id });
+  }
+
   if (action === 'get-configs') {
     const configs = await getConfigs();
     return sendSuccess({ configs });
