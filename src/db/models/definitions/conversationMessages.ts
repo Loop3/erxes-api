@@ -42,6 +42,7 @@ export interface IMessage {
   engageData?: IEngageData;
   contentType?: string;
   flowActionId?: string;
+  status?: string;
 }
 
 export interface IMessageDocument extends IMessage, Document {
@@ -106,4 +107,5 @@ export const messageSchema = new Schema({
     default: MESSAGE_TYPES.TEXT,
   }),
   flowActionId: field({ type: String, index: true }),
+  status: field({ type: String }),
 });

@@ -60,6 +60,7 @@ export const types = `
   type ConversationMessage {
     _id: String!
     content: String
+    status: String
     attachments: [Attachment]
     mentionedUserIds: [String]
     conversationId: String
