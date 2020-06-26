@@ -97,14 +97,36 @@ const apolloServer = new ApolloServer({
 
         brandIdSelector = { _id: { $in: scopeBrandIds } };
         commonQuerySelector = { scopeBrandIds: { $in: scopeBrandIds } };
-        commonQuerySelectorElk = { terms: { scopeBrandIds } };
+        commonQuerySelectorElk = {
+          bool: {
+            should: [
+              {
+                terms: {
+                  scopeBrandIds: scopeBrandIds.filter(c => typeof c === 'string'),
+                },
+              },
+              {
+                bool: {
+                  must_not: {
+                    exists: {
+                      field: 'scopeBrandIds',
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        };
         userBrandIdsSelector = { brandIds: { $in: scopeBrandIds } };
       }
     }
 
     return {
       brandIdSelector,
-      docModifier: doc => ({ ...doc, scopeBrandIds: scopeBrandIds.filter((c: any) => c?.length) }),
+      docModifier: doc => ({
+        ...doc,
+        scopeBrandIds: scopeBrandIds.filter((c: any) => c?.length),
+      }),
       commonQuerySelector,
       commonQuerySelectorElk,
       userBrandIdsSelector,
