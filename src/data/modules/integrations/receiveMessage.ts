@@ -146,12 +146,8 @@ export const receiveRpcMessage = async msg => {
 
     await Conversations.updateConversation(message.conversationId, conversationDoc);
 
-    graphqlPubsub.publish('conversationClientMessageInserted', {
-      conversationClientMessageInserted: message,
-    });
-
-    graphqlPubsub.publish('conversationMessageInserted', {
-      conversationMessageInserted: message,
+    graphqlPubsub.publish('conversationMessageUpdated', {
+      conversationMessageUpdated: message,
     });
 
     return sendSuccess({ _id: doc.id });

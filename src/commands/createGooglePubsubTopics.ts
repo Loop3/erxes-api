@@ -21,6 +21,7 @@ const topics = [
   'conversationChanged',
   'conversationClientMessageInserted',
   'conversationMessageInserted',
+  'conversationMessageUpdated',
   'customerConnectionChanged',
   'widgetNotification',
 ];
