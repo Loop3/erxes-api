@@ -51,6 +51,22 @@ describe('Test tickets mutations', () => {
     status: $status
   `;
 
+  const commonDragParamDefs = `
+    $itemId: String!,
+    $aboveItemId: String,
+    $destinationStageId: String!,
+    $sourceStageId: String,
+    $proccessId: String
+  `;
+
+  const commonDragParams = `
+    itemId: $itemId,
+    aboveItemId: $aboveItemId,
+    destinationStageId: $destinationStageId,
+    sourceStageId: $sourceStageId,
+    proccessId: $proccessId
+  `;
+
   beforeEach(async () => {
     // Creating test data
     board = await boardFactory({ type: BOARD_TYPES.TICKET });
@@ -123,44 +139,55 @@ describe('Test tickets mutations', () => {
 
   test('Change ticket', async () => {
     const args = {
-      _id: ticket._id,
-      destinationStageId: ticket.stageId || '',
+      proccessId: Math.random().toString(),
+      itemId: ticket._id,
+      aboveItemId: '',
+      destinationStageId: ticket.stageId,
+      sourceStageId: ticket.stageId
     };
 
     const mutation = `
-      mutation ticketsChange($_id: String!, $destinationStageId: String) {
-        ticketsChange(_id: $_id, destinationStageId: $destinationStageId) {
-          _id,
+      mutation ticketsChange(${commonDragParamDefs}) {
+        ticketsChange(${commonDragParams}) {
+          _id
+          name
           stageId
+          order
         }
       }
     `;
 
     const updatedTicket = await graphqlRequest(mutation, 'ticketsChange', args, context);
 
-    expect(updatedTicket._id).toEqual(args._id);
+    expect(updatedTicket._id).toEqual(args.itemId);
   });
 
   test('Change ticket if move to another stage', async () => {
     const anotherStage = await stageFactory({ pipelineId: pipeline._id });
 
     const args = {
-      _id: ticket._id,
+      proccessId: Math.random().toString(),
+      itemId: ticket._id,
+      aboveItemId: '',
       destinationStageId: anotherStage._id,
+      sourceStageId: ticket.stageId
     };
 
+
     const mutation = `
-      mutation ticketsChange($_id: String!, $destinationStageId: String) {
-        ticketsChange(_id: $_id, destinationStageId: $destinationStageId) {
-          _id,
+      mutation ticketsChange(${commonDragParamDefs}) {
+        ticketsChange(${commonDragParams}) {
+          _id
+          name
           stageId
+          order
         }
       }
     `;
 
     const updatedTicket = await graphqlRequest(mutation, 'ticketsChange', args);
 
-    expect(updatedTicket._id).toEqual(args._id);
+    expect(updatedTicket._id).toEqual(args.itemId);
   });
 
   test('Update ticket move to pipeline stage', async () => {
@@ -188,34 +215,6 @@ describe('Test tickets mutations', () => {
 
     expect(updatedTicket._id).toEqual(args._id);
     expect(updatedTicket.stageId).toEqual(args.stageId);
-  });
-
-  test('Ticket update orders', async () => {
-    const ticketToStage = await ticketFactory({});
-
-    const args = {
-      orders: [
-        { _id: ticket._id, order: 9 },
-        { _id: ticketToStage._id, order: 3 },
-      ],
-      stageId: stage._id,
-    };
-
-    const mutation = `
-      mutation ticketsUpdateOrder($stageId: String!, $orders: [OrderItem]) {
-        ticketsUpdateOrder(stageId: $stageId, orders: $orders) {
-          _id
-          stageId
-          order
-        }
-      }
-    `;
-
-    const [updatedTicket, updatedTicketToOrder] = await graphqlRequest(mutation, 'ticketsUpdateOrder', args, context);
-
-    expect(updatedTicket.order).toBe(3);
-    expect(updatedTicketToOrder.order).toBe(9);
-    expect(updatedTicket.stageId).toBe(stage._id);
   });
 
   test('Remove ticket', async () => {

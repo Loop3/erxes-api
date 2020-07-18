@@ -15,6 +15,8 @@ import {
   ConversationMessages,
   Conversations,
   Customers,
+  DashboardItems,
+  Dashboards,
   Deals,
   EmailDeliveries,
   EmailTemplates,
@@ -104,6 +106,38 @@ export const activityLogFactory = async (params: IActivityLogFactoryInput = {}) 
   return activity.save();
 };
 
+interface IDashboardFactoryInput {
+  name?: string;
+}
+
+export const dashboardFactory = async (params: IDashboardFactoryInput) => {
+  const dashboard = new Dashboards({
+    name: params.name || 'name',
+  });
+
+  return dashboard.save();
+};
+
+interface IDashboardFactoryInput {
+  dashboardId?: string;
+  layout?: string;
+  vizState?: string;
+  name?: string;
+  type?: string;
+}
+
+export const dashboardItemsFactory = async (params: IDashboardFactoryInput) => {
+  const dashboardItem = new DashboardItems({
+    name: params.name || 'name',
+    dashboardId: params.dashboardId || 'dashboardId',
+    layout: params.layout || 'layout',
+    vizState: params.vizState || 'vizState',
+    type: params.type || 'type',
+  });
+
+  return dashboardItem.save();
+};
+
 interface IUserFactoryInput {
   username?: string;
   fullName?: string;
@@ -187,6 +221,7 @@ interface IEngageMessageFactoryInput {
   messenger?: IMessenger;
   title?: string;
   email?: IEmail;
+  smsContent?: string;
 }
 
 export const engageMessageFactory = (params: IEngageMessageFactoryInput = {}) => {
@@ -203,6 +238,7 @@ export const engageMessageFactory = (params: IEngageMessageFactoryInput = {}) =>
     isDraft: params.isDraft || false,
     messenger: params.messenger,
     email: params.email,
+    smsContent: params.smsContent || 'Sms content',
   });
 
   return engageMessage.save();
@@ -471,6 +507,7 @@ interface ICustomerFactoryInput {
   visitorContactInfo?: any;
   deviceTokens?: string[];
   emailValidationStatus?: string;
+  phoneValidationStatus?: string;
   mergedIds?: string[];
   relatedIntegrationIds?: string[];
 }
@@ -499,6 +536,7 @@ export const customerFactory = async (params: ICustomerFactoryInput = {}, useMod
     tagIds: params.tagIds || [Random.id()],
     ownerId: params.ownerId || Random.id(),
     emailValidationStatus: params.emailValidationStatus || 'unknown',
+    phoneValidationStatus: params.phoneValidationStatus || 'unknown',
     profileScore: params.profileScore || 0,
     code: await getUniqueValue(Customers, 'code', params.code),
     visitorContactInfo: params.visitorContactInfo,
@@ -1062,6 +1100,7 @@ interface IGrowthHackFactoryInput {
   votedUserIds?: string[];
   labelIds?: string[];
   initialStageId?: string;
+  order?: number;
 }
 
 export const growthHackFactory = async (params: IGrowthHackFactoryInput = {}) => {
@@ -1085,6 +1124,7 @@ export const growthHackFactory = async (params: IGrowthHackFactoryInput = {}) =>
     impact: params.impact || 0,
     priority: params.priority,
     labelIds: params.labelIds || [],
+    order: params.order || Math.random()
   });
 
   return growthHack.save();

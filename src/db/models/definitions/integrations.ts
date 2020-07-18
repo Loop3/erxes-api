@@ -46,6 +46,7 @@ export interface IMessengerData {
   showLauncher?: boolean;
   requireAuth?: boolean;
   forceLogoutWhenResolve?: boolean;
+  showVideoCallRequest?: boolean;
 }
 
 export interface IMessengerDataDocument extends IMessengerData, Document {}
@@ -151,6 +152,7 @@ const messengerDataSchema = new Schema(
     showChat: field({ type: Boolean, default: true }),
     showLauncher: field({ type: Boolean, default: true }),
     forceLogoutWhenResolve: field({ type: Boolean, default: false }),
+    showVideoCallRequest: field({ type: Boolean, default: false }),
   },
   { _id: false },
 );

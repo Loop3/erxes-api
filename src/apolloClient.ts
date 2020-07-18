@@ -1,11 +1,14 @@
 import { ApolloServer, PlaygroundConfig } from 'apollo-server-express';
+import * as cookie from 'cookie';
 import * as dotenv from 'dotenv';
+import * as jwt from 'jsonwebtoken';
 import { EngagesAPI, IntegrationsAPI } from './data/dataSources';
 import resolvers from './data/resolvers';
 import typeDefs from './data/schema';
-import { Conversations, Customers } from './db/models';
+import { Conversations, Customers, Users } from './db/models';
 import { graphqlPubsub } from './pubsub';
 import { addToArray, get, inArray, removeFromArray, set } from './redisClient';
+import { frontendEnv } from './data/utils';
 
 // load environment variables
 dotenv.config();
@@ -41,23 +44,30 @@ const apolloServer = new ApolloServer({
   dataSources: generateDataSources,
   playground,
   uploads: false,
-  context: ({ req, res }) => {
-    if (!req || NODE_ENV === 'test') {
+  context: ({ req, res, connection }) => {
+    let user = req && req.user ? req.user : null;
+
+    if (!req) {
+      if (connection && connection.context && connection.context.user) {
+        user = connection.context.user;
+      }
+
       return {
         dataSources: generateDataSources(),
+        user,
       };
     }
 
     const requestInfo = {
       secure: req.secure,
       cookies: req.cookies,
+      hostname: frontendEnv({ name: 'API_URL', req }),
     };
-
-    const user = req.user;
 
     if (USE_BRAND_RESTRICTIONS !== 'true') {
       return {
         brandIdSelector: {},
+        singleBrandIdSelector: {},
         userBrandIdsSelector: {},
         docModifier: doc => doc,
         commonQuerySelector: {},
@@ -73,6 +83,7 @@ const apolloServer = new ApolloServer({
     let commonQuerySelector = {};
     let commonQuerySelectorElk;
     let userBrandIdsSelector = {};
+    let singleBrandIdSelector = {};
 
     if (user) {
       brandIds = user.brandIds || [];
@@ -86,11 +97,13 @@ const apolloServer = new ApolloServer({
         commonQuerySelector = { scopeBrandIds: { $in: scopeBrandIds } };
         commonQuerySelectorElk = { terms: { scopeBrandIds } };
         userBrandIdsSelector = { brandIds: { $in: scopeBrandIds } };
+        singleBrandIdSelector = { brandId: { $in: scopeBrandIds } };
       }
     }
 
     return {
       brandIdSelector,
+      singleBrandIdSelector,
       docModifier: doc => ({ ...doc, scopeBrandIds }),
       commonQuerySelector,
       commonQuerySelectorElk,
@@ -104,7 +117,7 @@ const apolloServer = new ApolloServer({
     keepAlive: 10000,
     path: '/subscriptions',
 
-    onConnect(_connectionParams, webSocket: any) {
+    onConnect(_connectionParams, webSocket: any, connectionContext: any) {
       webSocket.on('message', async message => {
         const parsedMessage = JSON.parse(message.toString()).id || {};
 
@@ -140,6 +153,22 @@ const apolloServer = new ApolloServer({
           }
         }
       });
+
+      let user;
+
+      try {
+        const cookies = cookie.parse(connectionContext.request.headers.cookie);
+
+        const jwtContext = jwt.verify(cookies['auth-token'], Users.getSecret());
+
+        user = jwtContext.user;
+      } catch (e) {
+        user = null;
+      }
+
+      return {
+        user,
+      };
     },
 
     async onDisconnect(webSocket: any) {
