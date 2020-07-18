@@ -133,7 +133,7 @@ export const loadClass = () => {
     /**
      * Create new user
      */
-    public static async createUser({ username, email, password, details, links, groupIds }: IUser) {
+    public static async createUser({ username, email, password, details, links, groupIds, isOwner }: IUser) {
       // empty string password validation
       if (password === '') {
         throw new Error('Password can not be empty');
@@ -151,6 +151,7 @@ export const loadClass = () => {
         links,
         groupIds,
         isActive: true,
+        isOwner,
         // hash password
         password: await this.generatePassword(password),
       });
