@@ -33,6 +33,9 @@ import tasks from './tasks';
 import tickets from './tickets';
 import users from './users';
 import widgets from './widgets';
+import flowActionTypes from './flowActionTypes';
+import flowActions from './flowActions';
+import flows from './flows';
 
 export default {
   ...dashboards,
@@ -72,4 +75,7 @@ export default {
   ...checklists,
   ...robot,
   ...widgets,
+  ...flowActionTypes,
+  ...flowActions,
+  ...flows,
 };

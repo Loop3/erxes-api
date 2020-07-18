@@ -279,6 +279,9 @@ export const MODULE_NAMES = {
   ENGAGE: 'engage',
   SCRIPT: 'script',
   FIELD: 'field',
+  FLOW_ACTION_TYPE: 'flowActionType',
+  FLOW_ACTION: 'flowAction',
+  FLOW: 'flow',
 };
 
 export const RABBITMQ_QUEUES = {

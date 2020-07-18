@@ -2,6 +2,7 @@ import { ConversationMessages, Conversations, Customers, Integrations, Users } f
 import { CONVERSATION_STATUSES } from '../../../db/models/definitions/constants';
 import { graphqlPubsub } from '../../../pubsub';
 import { getConfigs } from '../../utils';
+import flow from '../flow';
 
 const sendError = message => ({
   status: 'error',
@@ -110,6 +111,8 @@ export const receiveRpcMessage = async msg => {
     graphqlPubsub.publish('conversationMessageInserted', {
       conversationMessageInserted: message,
     });
+
+    flow.handleMessage(message);
 
     return sendSuccess({ _id: message._id });
   }

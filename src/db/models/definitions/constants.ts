@@ -80,6 +80,7 @@ export const KIND_CHOICES = {
   SMOOCH_TELEGRAM: 'smooch-telegram',
   SMOOCH_TWILIO: 'smooch-twilio',
   WHATSAPP: 'whatsapp',
+  WHATSPRO: 'whatspro',
   ALL: [
     'messenger',
     'lead',
@@ -100,6 +101,7 @@ export const KIND_CHOICES = {
     'smooch-telegram',
     'smooch-twilio',
     'whatsapp',
+    'whatspro',
   ],
 };
 
@@ -377,7 +379,8 @@ export const MESSAGE_TYPES = {
   VIDEO_CALL: 'videoCall',
   VIDEO_CALL_REQUEST: 'videoCallRequest',
   TEXT: 'text',
-  ALL: ['videoCall', 'videoCallRequest', 'text'],
+  VCARD: 'vcard',
+  ALL: ['videoCall', 'videoCallRequest', 'text', 'vcard'],
 };
 
 // module constants
