@@ -126,6 +126,7 @@ import {
   types as PipelineLabelTypes,
 } from './pipelineLabel';
 
+import { mutations as DashboardMutations, queries as DashboardQueries, types as DashboardTypes } from './dashboard';
 import { mutations as WidgetMutations, queries as WidgetQueries, types as WidgetTypes } from './widget';
 
 import {
@@ -179,6 +180,7 @@ export const types = `
   ${RobotTypes}
   ${PipelineLabelTypes}
   ${WidgetTypes}
+  ${DashboardTypes}
   ${FlowActionTypeTypes}
   ${FlowActionTypes}
   ${FlowTypes}
@@ -224,6 +226,7 @@ export const queries = `
     ${RobotQueries}
     ${PipelineLabelQueries}
     ${WidgetQueries}
+    ${DashboardQueries}
     ${FlowActionTypeQueries}
     ${FlowActionQueries}
     ${FlowQueries}
@@ -267,6 +270,7 @@ export const mutations = `
     ${RobotMutations}
     ${PipelineLabelMutations}
     ${WidgetMutations}
+    ${DashboardMutations}
     ${FlowActionTypeMutations}
     ${FlowActionMutations}
     ${FlowMutations}
@@ -287,13 +291,9 @@ export const subscriptions = `
     importHistoryChanged(_id: String!): ImportHistory
     notificationInserted(userId: String): Notification
     onboardingChanged(userId: String!): OnboardingNotification
-    
-    pipelinesChanged(_id: String!): Pipeline
-    dealsChanged(_id: String!): Deal
-    ticketsChanged(_id: String!): Ticket
-    tasksChanged(_id: String!): Task
-    growthHacksChanged(_id: String!): GrowthHack
-    
+
+    pipelinesChanged(_id: String!): PipelineChangeResponse
+
     checklistsChanged(contentType: String!, contentTypeId: String!): Checklist
     checklistDetailChanged(_id: String!): Checklist
   }

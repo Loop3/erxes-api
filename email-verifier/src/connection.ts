@@ -5,7 +5,13 @@ import { debugBase } from './utils';
 dotenv.config();
 
 mongoose.Promise = global.Promise;
-mongoose.set('useFindAndModify', false);
+
+export const connectionOptions = {
+  useNewUrlParser: true,
+  useCreateIndex: true,
+  autoReconnect: true,
+  useFindAndModify: false,
+};
 
 const { MONGO_URL } = process.env;
 
@@ -20,8 +26,26 @@ mongoose.connection
     debugBase(`Database connection error: ${MONGO_URL}`, error);
   });
 
-export const connect = (URL?: string) => {
-  return mongoose.connect(URL || MONGO_URL, { useNewUrlParser: true, useCreateIndex: true });
+export const connect = async (URL?: string, options?) => {
+  return mongoose.connect(URL || MONGO_URL, {
+    ...connectionOptions,
+    ...(options || { poolSize: 100 }),
+  });
+};
+
+/**
+ * Health check status
+ */
+export const mongoStatus = () => {
+  return new Promise((resolve, reject) => {
+    mongoose.connection.db.admin().ping((err, result) => {
+      if (err) {
+        return reject(err);
+      }
+
+      return resolve(result);
+    });
+  });
 };
 
 export function disconnect() {
