@@ -26,6 +26,9 @@ nestedType = {
 }
 
 customer_mapping = {
+    'createdAt': {
+        'type': 'date',
+    },
     'state': {
         'type': 'keyword',
     },
@@ -71,6 +74,9 @@ customer_mapping = {
 }
 
 company_mapping = {
+    'createdAt': {
+        'type': 'date',
+    },
     'primaryEmail': {
         'type': 'text',
         'analyzer': 'uax_url_email_analyzer',
@@ -153,7 +159,7 @@ def put_mappings(index, mapping):
         print(e)
 
 
-db_name = pymongo.uri_parser.parse_uri(MONGO_URL)['database']
+db_name = pymongo.uri_parser.parse_uri(MONGO_URL)['database'].lower()
 
 put_mappings('%s__customers' % db_name, customer_mapping)
 put_mappings('%s__companies' % db_name, company_mapping)

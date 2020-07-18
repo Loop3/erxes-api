@@ -37,6 +37,7 @@
     "verifyCustomerEmails": "DEBUG=erxes-api:* ts-node ./src/commands/verifyCustomerEmails.ts",
     "runEsCommand": "ts-node ./src/commands/runEsCommand.ts",
     "migrate": "NODE_ENV=command migrate --migrations-dir='./dist/migrations' --store='./db-migrate-store.js' up",
+    "migrate-win": "set NODE_ENV=command migrate --migrations-dir='./dist/migrations' --store='./db-migrate-store.js' up",
     "release": "release-it"
   },
   "lint-staged": {

@@ -18,9 +18,12 @@ export interface IFlowActionDocument extends IFlowAction, Document {
 
 export interface IFlowActionValueCondition {
   operator: string;
+  type: string;
   values: string[];
   action: string;
   value: string;
+  variable: any;
+  error: string;
 }
 
 export interface IFlowActionValue {
@@ -38,7 +41,7 @@ export const flowActionSchema = new Schema({
   flowId: field({ type: String, label: 'Flow' }),
   actionId: field({ type: String, label: 'Flow Action Type' }),
   userId: field({ type: String, label: 'Created by' }),
-  value: field({ type: String, label: 'Value' }),
+  value: field({ type: String, optional: true, label: 'Value' }),
   order: field({ type: Number, label: 'Order' }),
   createdAt: field({ type: Date, label: 'Created at' }),
 });

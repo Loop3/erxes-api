@@ -125,6 +125,7 @@ export const INTEGRATION_NAMES_MAP = {
   'smooch-telegram': 'Telegram',
   'smooch-twilio': 'Twilio SMS',
   whatsapp: 'WhatsApp',
+  whatspro: 'WhatsPro',
 };
 
 // messenger data availability constants

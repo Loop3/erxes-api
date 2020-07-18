@@ -49,6 +49,7 @@ export const types = `
     permissionActions: JSON
     configs: JSON
     configsConstants: [JSON]
+    lastSeenAt: Date
   }
 
   type UserConversationListResponse {

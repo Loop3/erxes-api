@@ -3,6 +3,8 @@ import { Channels, Integrations } from '../../../db/models';
 import { CONVERSATION_STATUSES } from '../../../db/models/definitions/constants';
 import { fixDate } from '../../utils';
 
+const { USE_CHAT_RESTRICTIONS } = process.env;
+
 interface IIn {
   $in: string[];
 }
@@ -29,6 +31,7 @@ export interface IListArgs {
 
 interface IUserArgs {
   _id: string;
+  isOwner?: boolean;
   starredConversationIds?: string[];
 }
 
@@ -69,6 +72,12 @@ export default class Builder {
       statusFilter = this.statusFilter([CONVERSATION_STATUSES.CLOSED]);
     }
 
+    let assignedUserQuery: any = {};
+
+    if (USE_CHAT_RESTRICTIONS === 'true' && !this.user.isOwner) {
+      assignedUserQuery.assignedUserId = { $in: [this.user._id, null] };
+    }
+
     return {
       ...statusFilter,
       // exclude engage messages if customer did not reply
@@ -76,9 +85,11 @@ export default class Builder {
         {
           userId: { $exists: true },
           messageCount: { $gt: 1 },
+          ...assignedUserQuery,
         },
         {
           userId: { $exists: false },
+          ...assignedUserQuery,
         },
       ],
     };
@@ -142,7 +153,9 @@ export default class Builder {
     const channel = await Channels.getChannel(channelId);
 
     return {
-      integrationId: { $in: (channel.integrationIds || []).filter(id => this.activeIntegrationIds.includes(id)) },
+      integrationId: {
+        $in: (channel.integrationIds || []).filter(id => this.activeIntegrationIds.includes(id)),
+      },
     };
   }
 
@@ -189,7 +202,9 @@ export default class Builder {
 
   // filter by integration type
   public async integrationTypeFilter(integrationType: string): Promise<{ $and: IIntersectIntegrationIds[] }> {
-    const integrations = await Integrations.findIntegrations({ kind: integrationType });
+    const integrations = await Integrations.findIntegrations({
+      kind: integrationType,
+    });
 
     return {
       $and: [
@@ -245,6 +260,10 @@ export default class Builder {
 
     // filter by channelId & brandId
     this.queries.integrations = await this.integrationsFilter();
+
+    if (!this.queries.integrations.integrationId.$in.length) {
+      this.queries.integrations = {};
+    }
 
     // unassigned
     if (this.params.unassigned) {

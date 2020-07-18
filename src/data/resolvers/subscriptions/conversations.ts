@@ -30,6 +30,19 @@ export default {
   },
 
   /*
+   * Listen for message update
+   */
+  conversationMessageUpdated: {
+    subscribe: withFilter(
+      () => graphqlPubsub.asyncIterator('conversationMessageUpdated'),
+      // filter by conversationId
+      (payload, variables) => {
+        return payload.conversationMessageUpdated.conversationId === variables._id;
+      },
+    ),
+  },
+
+  /*
    * Admin is listening for this subscription to show typing notification
    */
   conversationClientTypingStatusChanged: {

@@ -60,11 +60,13 @@ export const types = `
   type ConversationMessage {
     _id: String!
     content: String
+    status: String
     attachments: [Attachment]
     mentionedUserIds: [String]
     conversationId: String
     internal: Boolean
     fromBot: Boolean
+    isGroupMsg: Boolean
     customerId: String
     userId: String
     createdAt: Date
