@@ -64,8 +64,6 @@ const apolloServer = new ApolloServer({
       hostname: frontendEnv({ name: 'API_URL', req }),
     };
 
-    const user = req.user;
-
     if (user) {
       Users.update(
         { _id: user._id },
