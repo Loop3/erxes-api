@@ -216,8 +216,8 @@ connect()
         actionId: sendMessageType?.id,
         value: JSON.stringify({
           content: [
-            'Que pena, mas neste momento não estamos em atendimento, <b>nosso horário de atendimento é das 09:00 às 18:00 de Segunda a Sábado.</b><br/><br/>' +
-              'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que em breve algum amiguinho humano irá lhe retornar.<br/><br/>',
+            'Que pena, mas neste momento não estamos em atendimento, <b>nosso horário de atendimento é das 09:00 às 18:00 de Segunda a Sábado.</b><br/>' +
+              'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que em breve algum amiguinho humano irá lhe retornar.',
           ],
         }),
       });
@@ -244,8 +244,8 @@ connect()
               action: 'erxes.action.transfer.to.agent',
               value: 'Muito obrigado, já abri um chamado aqui em breve um de nossos consultores irá entrar em contato.',
               error:
-                'Que pena, mas neste momento estamos com todos os nossos atendentes ocupados.</b><br/><br/>' +
-                'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que em breve algum amiguinho humano irá lhe retornar.<br/><br/>',
+                'Que pena, mas neste momento estamos com todos os nossos atendentes ocupados<br/>' +
+                'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que em breve algum amiguinho humano irá lhe retornar.',
             },
           ],
         }),
@@ -278,7 +278,7 @@ connect()
         actionId: askType?.id,
         value: JSON.stringify({
           content: [
-            'Já possui cadastro conosco?' + '<br><br><b>1</b> - JÁ SOU CLIENTE' + '<br><br><b>2</b> - NÃO SOU CLIENTE',
+            'Já possui cadastro conosco?' + '<br/><br/><b>1</b> - Já sou cliente' + '<br/><b>2</b> - Não sou cliente',
           ],
           conditions: [
             {
@@ -323,8 +323,8 @@ connect()
         value: JSON.stringify({
           value: 'Muito obrigado, Aguarde enquanto eu transfiro para um de nossos atendentes.',
           error:
-            'Que pena, mas neste momento estamos com todos os nossos atendentes ocupados.</b><br/><br/>' +
-            'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que em breve algum amiguinho humano irá lhe retornar.<br/><br/>',
+            'Que pena, mas neste momento estamos com todos os nossos atendentes ocupados<br/>' +
+            'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que em breve algum amiguinho humano irá lhe retornar.',
         }),
       });
     }
@@ -408,8 +408,8 @@ connect()
         value: JSON.stringify({
           value: 'Muito obrigado, aguarde enquanto eu transfiro para um de nossos atendentes.',
           error:
-            'Que pena, mas neste momento estamos com todos os nossos atendentes ocupados.</b><br/><br/>' +
-            'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que em breve algum amiguinho humano irá lhe retornar.<br/><br/>',
+            'Que pena, mas neste momento estamos com todos os nossos atendentes ocupados<br/>' +
+            'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que em breve algum amiguinho humano irá lhe retornar.',
         }),
       });
     }
@@ -431,7 +431,7 @@ connect()
               operator: '=',
               values: ['1', 'cadastro', 'cadastro fornecedor', 'cadastro de fornecedor'],
               action: 'erxes.action.execute.action',
-              value: '9',
+              value: '4',
             },
             {
               operator: '=',
@@ -451,7 +451,7 @@ connect()
         value: JSON.stringify({
           content: [
             'Por favor, para eu continuar com o atendimento preciso de algumas informações.' +
-              '</br></br>Já possui cadastro conosco?' +
+              '<br/><br/>Já possui cadastro conosco?' +
               '<br/><b>1</b> - Sim, sou fornecedor' +
               '<br/><b>2</b> - Não sou cadastrado',
           ],
@@ -480,7 +480,7 @@ connect()
         value: JSON.stringify({
           content: [
             'Por favor, para eu continuar com o atendimento preciso de algumas informações.' +
-              '</br></br>Qual seu CNPJ ou CPF?',
+              '<br/><br/>Qual seu CNPJ ou CPF?',
           ],
           conditions: [
             {
@@ -501,8 +501,21 @@ connect()
         value: JSON.stringify({
           value: 'Muito obrigado, aguarde enquanto eu transfiro para um de nossos atendentes.',
           error:
-            'Que pena, mas neste momento estamos com todos os nossos atendentes ocupados.</b><br/><br/>' +
-            'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que em breve algum amiguinho humano irá lhe retornar.<br/><br/>',
+            'Que pena, mas neste momento estamos com todos os nossos atendentes ocupados<br/>' +
+            'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que em breve algum amiguinho humano irá lhe retornar.',
+        }),
+      });
+
+      await FlowActions.createFlowAction({
+        order: 4,
+        flowId: purchasingSectorFlow.id,
+        type: sendMessageType?.type,
+        actionId: sendMessageType?.id,
+        value: JSON.stringify({
+          content: [
+            'Para ser um de nossos fornecedores é muito simples, basta acessar o link a baixo e realizar seu cadastro, em até 48 horas nossa equipe entrara em contato.' +
+              '<br/><br/>Link para cadastro: https://www.inovealimentos.com.br/cadastro-fornecedor',
+          ],
         }),
       });
     }

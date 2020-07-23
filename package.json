@@ -31,6 +31,8 @@
     "loadPermission": "ts-node ./src/commands/loadPermissionData.ts",
     "loadGrowthHackData": "ts-node ./src/commands/loadGrowthHackData.ts",
     "initProject": "ts-node ./src/commands/initProject.ts",
+    "initFlow": "ts-node ./src/commands/initFlow.ts",
+    "initBot": "ts-node ./src/commands/initBot.ts",
     "createGooglePubsubTopics": "ts-node ./src/commands/createGooglePubsubTopics.ts",
     "customCommand": "ts-node ./src/commands/customCommand.ts",
     "resetMigrations": "ts-node ./src/commands/resetMigrations.ts",
