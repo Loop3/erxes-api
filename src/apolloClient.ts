@@ -62,8 +62,6 @@ const apolloServer = new ApolloServer({
       cookies: req.cookies,
     };
 
-    const user = req.user;
-
     if (user) {
       Users.update(
         { _id: user._id },
