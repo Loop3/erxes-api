@@ -153,14 +153,32 @@ const conversationQueries = {
 
   async converstationFacebookComments(
     _root,
-    { postId, commentId, limit, senderId }: { commentId: string; postId: string; senderId: string; limit: number },
+    {
+      postId,
+      isResolved,
+      commentId,
+      limit,
+      senderId,
+    }: { commentId: string; isResolved: string; postId: string; senderId: string; limit: number },
     { dataSources }: IContext,
   ) {
     return dataSources.IntegrationsAPI.fetchApi('/facebook/get-comments', {
       postId,
+      isResolved,
       commentId,
       senderId,
       limit: limit || 10,
+    });
+  },
+
+  async converstationFacebookCommentsCount(
+    _root,
+    { postId, isResolved }: { postId: string; isResolved: string },
+    { dataSources }: IContext,
+  ) {
+    return dataSources.IntegrationsAPI.fetchApi('/facebook/get-comments-count', {
+      postId,
+      isResolved,
     });
   },
   /**
@@ -199,36 +217,40 @@ const conversationQueries = {
         break;
     }
 
-    // unassigned count
-    response.unassigned = await count({
+    const mainQuery = {
       ...qb.mainQuery(),
       ...queries.integrations,
       ...queries.integrationType,
+    };
+
+    // unassigned count
+    response.unassigned = await count({
+      ...mainQuery,
       ...qb.unassignedFilter(),
     });
 
     // participating count
     response.participating = await count({
-      ...qb.mainQuery(),
-      ...queries.integrations,
-      ...queries.integrationType,
+      ...mainQuery,
       ...qb.participatingFilter(),
     });
 
     // starred count
     response.starred = await count({
-      ...qb.mainQuery(),
-      ...queries.integrations,
-      ...queries.integrationType,
+      ...mainQuery,
       ...qb.starredFilter(),
     });
 
     // resolved count
     response.resolved = await count({
-      ...qb.mainQuery(),
-      ...queries.integrations,
-      ...queries.integrationType,
+      ...mainQuery,
       ...qb.statusFilter(['closed']),
+    });
+
+    // awaiting response count
+    response.awaitingResponse = await count({
+      ...mainQuery,
+      ...qb.awaitingResponse(),
     });
 
     return response;

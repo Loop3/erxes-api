@@ -2,7 +2,6 @@ import * as AWS from 'aws-sdk';
 import * as nodemailer from 'nodemailer';
 import { debugBase } from './debuggers';
 import Configs, { ISESConfig } from './models/Configs';
-import { get, set } from './redisClient';
 import { getApi } from './trackers/engageTracker';
 
 export const createTransporter = async () => {
@@ -16,9 +15,12 @@ export const createTransporter = async () => {
 };
 
 export interface ICustomer {
-  name: string;
   _id: string;
-  email: string;
+  primaryEmail: string;
+  emailValidationStatus: string;
+  primaryPhone: string;
+  phoneValidationStatus: string;
+  replacers: Array<{ key: string; value: string }>;
 }
 
 export interface IUser {
@@ -26,31 +28,6 @@ export interface IUser {
   position: string;
   email: string;
 }
-
-/**
- * Dynamic content tags
- */
-export const replaceKeys = ({
-  content,
-  customer,
-  user,
-}: {
-  content: string;
-  customer: ICustomer;
-  user: IUser;
-}): string => {
-  let result = content;
-  // replace customer fields
-  result = result.replace(/{{\s?customer.name\s?}}/gi, customer.name);
-  result = result.replace(/{{\s?customer.email\s?}}/gi, customer.email || '');
-
-  // replace user fields
-  result = result.replace(/{{\s?user.fullName\s?}}/gi, user.name || '');
-  result = result.replace(/{{\s?user.position\s?}}/gi, user.position || '');
-  result = result.replace(/{{\s?user.email\s?}}/gi, user.email || '');
-
-  return result;
-};
 
 export const getEnv = ({ name, defaultValue }: { name: string; defaultValue?: string }): string => {
   const value = process.env[name];
@@ -92,6 +69,9 @@ export const subscribeEngage = () => {
         Endpoint: `${MAIN_API_DOMAIN}/service/engage/tracker`,
       })
       .promise()
+      .then(response => {
+        debugBase(response);
+      })
       .catch(e => {
         return reject(e.message);
       });
@@ -155,10 +135,6 @@ export const getValueAsString = async name => {
   return entry.value;
 };
 
-export const resetConfigsCache = () => {
-  set('configs_erxes_engages', '');
-};
-
 export const updateConfigs = async (configsMap): Promise<void> => {
   const prevSESConfigs = await Configs.getSESConfigs();
 
@@ -166,28 +142,18 @@ export const updateConfigs = async (configsMap): Promise<void> => {
 
   const updatedSESConfigs = await Configs.getSESConfigs();
 
-  resetConfigsCache();
-
   if (JSON.stringify(prevSESConfigs) !== JSON.stringify(updatedSESConfigs)) {
     await subscribeEngage();
   }
 };
 
-export const getConfigs = async () => {
-  const configsCache = await get('configs_erxes_engages');
-
-  if (configsCache && configsCache !== '{}') {
-    return JSON.parse(configsCache);
-  }
-
+export const getConfigs = async (): Promise<any> => {
   const configsMap = {};
   const configs = await Configs.find({});
 
   for (const config of configs) {
     configsMap[config.code] = config.value;
   }
-
-  set('configs_erxes_engages', JSON.stringify(configsMap));
 
   return configsMap;
 };

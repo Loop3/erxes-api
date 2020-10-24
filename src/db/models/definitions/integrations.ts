@@ -34,6 +34,7 @@ export interface IMessageDataMessages {
 }
 
 export interface IMessengerData {
+  botEndpointUrl?: string;
   supporterIds?: string[];
   notifyCustomer?: boolean;
   availabilityMethod?: string;
@@ -75,6 +76,12 @@ export interface ILeadData {
   rules?: IRule;
   viewCount?: number;
   contactsGathered?: number;
+  isRequireOnce?: boolean;
+}
+
+export interface IWebhookData {
+  script: string;
+  token: string;
 }
 
 export interface ILeadDataDocument extends ILeadData, Document {
@@ -86,6 +93,7 @@ export interface IUiOptions {
   color?: string;
   wallpaper?: string;
   logo?: string;
+  textColor?: string;
 }
 
 // subdocument schema for messenger UiOptions
@@ -103,6 +111,7 @@ export interface IIntegration {
   uiOptions?: IUiOptions;
   isActive?: boolean;
   flowId?: string;
+  channelIds?: string[];
 }
 
 export interface IIntegrationDocument extends IIntegration, Document {
@@ -112,6 +121,7 @@ export interface IIntegrationDocument extends IIntegration, Document {
   formData?: ILeadData;
   leadData?: ILeadDataDocument;
   messengerData?: IMessengerDataDocument;
+  webhookData?: IWebhookData;
   uiOptions?: IUiOptionsDocument;
 }
 
@@ -128,6 +138,7 @@ const messengerOnlineHoursSchema = new Schema(
 // subdocument schema for MessengerData
 const messengerDataSchema = new Schema(
   {
+    botEndpointUrl: field({ type: String }),
     supporterIds: field({ type: [String] }),
     notifyCustomer: field({ type: Boolean }),
     availabilityMethod: field({
@@ -258,6 +269,11 @@ export const leadDataSchema = new Schema(
       optional: true,
       label: 'Rules',
     }),
+    isRequireOnce: field({
+      type: Boolean,
+      optional: true,
+      label: 'Do now show again if already filled out',
+    }),
   },
   { _id: false },
 );
@@ -266,8 +282,17 @@ export const leadDataSchema = new Schema(
 const uiOptionsSchema = new Schema(
   {
     color: field({ type: String }),
+    textColor: field({ type: String }),
     wallpaper: field({ type: String }),
     logo: field({ type: String }),
+  },
+  { _id: false },
+);
+
+const webhookDataSchema = new Schema(
+  {
+    script: field({ type: String, optional: true }),
+    token: field({ type: String }),
   },
   { _id: false },
 );
@@ -295,7 +320,11 @@ export const integrationSchema = new Schema({
   formId: field({ type: String, label: 'Form' }),
   leadData: field({ type: leadDataSchema, label: 'Lead data' }),
   isActive: field({ type: Boolean, optional: true, default: true, label: 'Is active' }),
+<<<<<<< HEAD
+  webhookData: field({ type: webhookDataSchema }),
+=======
   flowId: field({ type: String, label: 'Flow' }),
+>>>>>>> develop
   // TODO: remove
   formData: field({ type: leadDataSchema }),
   messengerData: field({ type: messengerDataSchema }),
