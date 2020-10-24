@@ -74,11 +74,8 @@ export default {
   ...checklists,
   ...robot,
   ...widgets,
-<<<<<<< HEAD
-  ...webhooks,
-=======
   ...flowActionTypes,
   ...flowActions,
   ...flows,
->>>>>>> develop
+  ...webhooks,
 };
