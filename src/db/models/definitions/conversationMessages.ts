@@ -35,12 +35,15 @@ export interface IMessage {
   customerId?: string;
   userId?: string;
   fromBot?: boolean;
+  isGroupMsg?: boolean;
   isCustomerRead?: boolean;
   formWidgetData?: any;
   botData?: any;
   messengerAppData?: any;
   engageData?: IEngageData;
   contentType?: string;
+  flowActionId?: string;
+  status?: string;
 }
 
 export interface IMessageDocument extends IMessage, Document {
@@ -92,6 +95,7 @@ export const messageSchema = new Schema({
   internal: field({ type: Boolean, index: true }),
   customerId: field({ type: String, index: true }),
   fromBot: field({ type: Boolean }),
+  isGroupMsg: field({ type: Boolean }),
   userId: field({ type: String, index: true }),
   createdAt: field({ type: Date, index: true }),
   isCustomerRead: field({ type: Boolean }),
@@ -104,4 +108,6 @@ export const messageSchema = new Schema({
     enum: MESSAGE_TYPES.ALL,
     default: MESSAGE_TYPES.TEXT,
   }),
+  flowActionId: field({ type: String, index: true }),
+  status: field({ type: String }),
 });

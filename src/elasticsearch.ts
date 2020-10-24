@@ -23,7 +23,7 @@ export const getIndexPrefix = () => {
   }
 
   const uriObject = mongoUri.parse(MONGO_URL);
-  const dbName = uriObject.database;
+  const dbName = uriObject.database.toLowerCase();
 
   return `${dbName}__`;
 };

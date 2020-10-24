@@ -13,19 +13,25 @@ connect()
     });
 
     // create admin user
-    const user = await Users.create({
-      username: 'admin',
-      password: await Users.generatePassword(newPwd),
-      email: 'admin@erxes.io',
-      isOwner: true,
-      details: {
-        fullName: 'Admin',
-      },
-    });
+    let user = await Users.findOne({ isOwner: true });
 
-    console.log('\x1b[32m%s\x1b[0m', 'Your new password: ' + newPwd);
+    if (!user) {
+      user = await Users.createUser({
+        username: 'admin',
+        password: newPwd,
+        email: 'admin@erxes.io',
+        isOwner: true,
+        details: {
+          fullName: 'Admin',
+        },
+      });
 
-    return Users.findOne({ _id: user._id });
+      console.log('\x1b[32m%s\x1b[0m', 'Your new password: ' + newPwd);
+
+      return Users.findOne({ _id: user._id });
+    }
+
+    return;
   })
 
   .then(() => {

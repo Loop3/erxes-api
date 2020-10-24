@@ -125,6 +125,14 @@ import {
 import { mutations as WebhookMutations, queries as WebhookQueries, types as WebhookTypes } from './webhook';
 import { mutations as WidgetMutations, queries as WidgetQueries, types as WidgetTypes } from './widget';
 
+import {
+  mutations as FlowActionTypeMutations,
+  queries as FlowActionTypeQueries,
+  types as FlowActionTypeTypes,
+} from './flowActionType';
+import { mutations as FlowActionMutations, queries as FlowActionQueries, types as FlowActionTypes } from './flowAction';
+import { mutations as FlowMutations, queries as FlowQueries, types as FlowTypes } from './flow';
+
 export const types = `
   scalar JSON
   scalar Date
@@ -168,6 +176,9 @@ export const types = `
   ${RobotTypes}
   ${PipelineLabelTypes}
   ${WidgetTypes}
+  ${FlowActionTypeTypes}
+  ${FlowActionTypes}
+  ${FlowTypes}
   ${WebhookTypes}
 `;
 
@@ -210,6 +221,9 @@ export const queries = `
     ${RobotQueries}
     ${PipelineLabelQueries}
     ${WidgetQueries}
+    ${FlowActionTypeQueries}
+    ${FlowActionQueries}
+    ${FlowQueries}
     ${WebhookQueries}
   }
 `;
@@ -251,6 +265,9 @@ export const mutations = `
     ${RobotMutations}
     ${PipelineLabelMutations}
     ${WidgetMutations}
+    ${FlowActionTypeMutations}
+    ${FlowActionMutations}
+    ${FlowMutations}
     ${WebhookMutations}
   }
 `;
@@ -259,6 +276,7 @@ export const subscriptions = `
   type Subscription {
     conversationChanged(_id: String!): ConversationChangedResponse
     conversationMessageInserted(_id: String!): ConversationMessage
+    conversationMessageUpdated(_id: String!): ConversationMessage
     conversationClientMessageInserted(userId: String!): ConversationMessage
     conversationClientTypingStatusChanged(_id: String!): ConversationClientTypingStatusChangedResponse
     conversationAdminMessageInserted(customerId: String!): ConversationAdminMessageInsertedResponse

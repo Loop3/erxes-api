@@ -37,6 +37,7 @@
     "runEsCommand": "ts-node ./src/commands/runEsCommand.ts",
     "trackTelemetry": "node ./dist/commands/trackTelemetry.js",
     "migrate": "NODE_ENV=command migrate --migrations-dir='./dist/migrations' --store='./db-migrate-store.js' up",
+    "migrate-win": "set NODE_ENV=command migrate --migrations-dir='./dist/migrations' --store='./db-migrate-store.js' up",
     "release": "release-it"
   },
   "lint-staged": {

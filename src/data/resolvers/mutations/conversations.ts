@@ -1,6 +1,6 @@
 import * as strip from 'strip';
 import * as _ from 'underscore';
-import { ConversationMessages, Conversations, Customers, Integrations, Tags } from '../../../db/models';
+import { ConversationMessages, Conversations, Customers, Integrations, Users, Tags } from '../../../db/models';
 import Messages from '../../../db/models/ConversationMessages';
 import {
   KIND_CHOICES,
@@ -26,6 +26,7 @@ export interface IConversationMessageAdd {
   mentionedUserIds?: string[];
   internal?: boolean;
   attachments?: any;
+  flowActionId?: string;
 }
 
 interface IReplyFacebookComment {
@@ -46,6 +47,7 @@ const sendConversationToIntegrations = (
   doc: IConversationMessageAdd,
   dataSources: any,
   action?: string,
+  messageId?: string,
 ) => {
   if (type === 'facebook') {
     const regex = new RegExp('<img[^>]* src="([^"]*)"', 'g');
@@ -74,6 +76,7 @@ const sendConversationToIntegrations = (
     return dataSources.IntegrationsAPI[requestName]({
       conversationId,
       integrationId,
+      messageId,
       content: strip(doc.content),
       attachments: doc.attachments || [],
     });
@@ -311,7 +314,20 @@ const conversationMutations = {
       requestName = 'replyWhatsApp';
     }
 
-    await sendConversationToIntegrations(type, integrationId, conversationId, requestName, doc, dataSources, action);
+    if (kind === KIND_CHOICES.WHATSPRO) {
+      requestName = 'replyWhatsPro';
+    }
+
+    await sendConversationToIntegrations(
+      type,
+      integrationId,
+      conversationId,
+      requestName,
+      doc,
+      dataSources,
+      action,
+      message._id,
+    );
 
     const dbMessage = await ConversationMessages.getMessage(message._id);
 
@@ -381,6 +397,21 @@ const conversationMutations = {
 
     await sendNotifications({ user, conversations, type: NOTIFICATION_TYPES.CONVERSATION_ASSIGNEE_CHANGE });
 
+    // Add bot message and update conversation
+    let assignedUser = await Users.getUser(assignedUserId);
+
+    for (const conversation of conversations) {
+      let message = await ConversationMessages.addMessage({
+        conversationId: conversation._id,
+        content: `${assignedUser.details?.shortName || assignedUser.email} has been assigned to this conversation`,
+        fromBot: true,
+      });
+
+      graphqlPubsub.publish('conversationClientMessageInserted', {
+        conversationClientMessageInserted: message,
+      });
+    }
+
     return conversations;
   },
 
@@ -399,6 +430,23 @@ const conversationMutations = {
 
     // notify graphl subscription
     publishConversationsChanged(_ids, 'assigneeChanged');
+
+    // Add bot message and update conversation
+    for (const conversation of oldConversations) {
+      if (!conversation.assignedUserId) continue;
+
+      let unAssignedUser = await Users.getUser(conversation.assignedUserId);
+      let message = await ConversationMessages.addMessage({
+        conversationId: conversation._id,
+        content: `${unAssignedUser.details?.shortName ||
+          unAssignedUser.email} has been deassigned from this conversation`,
+        fromBot: true,
+      });
+
+      graphqlPubsub.publish('conversationClientMessageInserted', {
+        conversationClientMessageInserted: message,
+      });
+    }
 
     return updatedConversations;
   },

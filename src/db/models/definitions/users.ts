@@ -37,6 +37,7 @@ export interface IUser {
   details?: IDetail;
   links?: ILink;
   isActive?: boolean;
+  lastSeenAt?: number;
   brandIds?: string[];
   groupIds?: string[];
   deviceTokens?: string[];
@@ -67,7 +68,11 @@ const detailSchema = new Schema(
     position: field({ type: String, label: 'Position' }),
     location: field({ type: String, optional: true, label: 'Location' }),
     description: field({ type: String, optional: true, label: 'Description' }),
-    operatorPhone: field({ type: String, optional: true, label: 'Company phone' }),
+    operatorPhone: field({
+      type: String,
+      optional: true,
+      label: 'Company phone',
+    }),
   },
   { _id: false },
 );
@@ -92,14 +97,29 @@ export const userSchema = new Schema({
     match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,10})+$/, 'Please fill a valid email address'],
     label: 'Email',
   }),
-  getNotificationByEmail: field({ type: Boolean, label: 'Get notification by email' }),
-  emailSignatures: field({ type: [emailSignatureSchema], label: 'Email signatures' }),
-  starredConversationIds: field({ type: [String], label: 'Starred conversations' }),
+  getNotificationByEmail: field({
+    type: Boolean,
+    label: 'Get notification by email',
+  }),
+  emailSignatures: field({
+    type: [emailSignatureSchema],
+    label: 'Email signatures',
+  }),
+  starredConversationIds: field({
+    type: [String],
+    label: 'Starred conversations',
+  }),
   details: field({ type: detailSchema, default: {}, label: 'Details' }),
   links: field({ type: Object, default: {}, label: 'Links' }),
   isActive: field({ type: Boolean, default: true, label: 'Is active' }),
   brandIds: field({ type: [String], label: 'Brands' }),
   groupIds: field({ type: [String], label: 'Groups' }),
   deviceTokens: field({ type: [String], default: [], label: 'Device tokens' }),
-  doNotDisturb: field({ type: String, optional: true, default: 'No', label: 'Do not disturb' }),
+  doNotDisturb: field({
+    type: String,
+    optional: true,
+    default: 'No',
+    label: 'Do not disturb',
+  }),
+  lastSeenAt: field({ type: Date, label: 'Last seen at', optional: true }),
 });

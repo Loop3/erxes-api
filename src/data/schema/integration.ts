@@ -19,6 +19,8 @@ export const types = `
     form: Form
     channels: [Channel]
 
+    flowId: String
+
     websiteMessengerApps: [MessengerApp]
     knowledgeBaseMessengerApps: [MessengerApp]
     leadMessengerApps: [MessengerApp]
@@ -102,7 +104,8 @@ export const queries = `
     searchValue: String,
     channelId: String,
     brandId: String,
-    tag: String
+    tag: String,    
+    flowId: String
   ): [Integration]
 
   integrationsGetUsedTypes: [integrationsGetUsedTypes]
