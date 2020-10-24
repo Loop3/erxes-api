@@ -231,7 +231,6 @@ const integrationMutations = {
   async integrationsRemove(_root, { _id }: { _id: string }, { user, dataSources }: IContext) {
     const integration = await Integrations.getIntegration(_id);
 
-<<<<<<< HEAD
     try {
       if (
         [
@@ -252,37 +251,12 @@ const integrationMutations = {
           'smooch-line',
           'smooch-twilio',
           'whatsapp',
+          'whatspro',
           'telnyx',
         ].includes(integration.kind)
       ) {
         await dataSources.IntegrationsAPI.removeIntegration({ integrationId: _id });
       }
-=======
-    if (
-      [
-        'facebook-messenger',
-        'facebook-post',
-        'gmail',
-        'callpro',
-        'nylas-gmail',
-        'nylas-imap',
-        'nylas-office365',
-        'nylas-outlook',
-        'nylas-exchange',
-        'nylas-yahoo',
-        'chatfuel',
-        'twitter-dm',
-        'smooch-viber',
-        'smooch-telegram',
-        'smooch-line',
-        'smooch-twilio',
-        'whatsapp',
-        'whatspro',
-      ].includes(integration.kind)
-    ) {
-      await dataSources.IntegrationsAPI.removeIntegration({ integrationId: _id });
-    }
->>>>>>> develop
 
       await putDeleteLog({ type: MODULE_NAMES.INTEGRATION, object: integration }, user);
 

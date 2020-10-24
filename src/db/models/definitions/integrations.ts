@@ -320,11 +320,8 @@ export const integrationSchema = new Schema({
   formId: field({ type: String, label: 'Form' }),
   leadData: field({ type: leadDataSchema, label: 'Lead data' }),
   isActive: field({ type: Boolean, optional: true, default: true, label: 'Is active' }),
-<<<<<<< HEAD
-  webhookData: field({ type: webhookDataSchema }),
-=======
   flowId: field({ type: String, label: 'Flow' }),
->>>>>>> develop
+  webhookData: field({ type: webhookDataSchema }),
   // TODO: remove
   formData: field({ type: leadDataSchema }),
   messengerData: field({ type: messengerDataSchema }),
