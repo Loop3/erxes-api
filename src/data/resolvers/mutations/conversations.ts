@@ -39,7 +39,7 @@ interface IReplyFacebookComment {
  *  Send conversation to integrations
  */
 
-const sendConversationToIntegrations = (
+export const sendConversationToIntegrations = (
   type: string,
   integrationId: string,
   conversationId: string,
@@ -70,6 +70,13 @@ const sendConversationToIntegrations = (
         attachments: doc.attachments || [],
       }),
     });
+  }
+
+  if (type === 'whatspro') {
+    doc.content = doc.content.replace(/<\/?(b|strong)>/g, '*');
+    doc.content = doc.content.replace(/<br ?\/?>/g, '\n');
+    doc.content = doc.content.replace(/<\/?i>/g, '_');
+    doc.content = doc.content.replace(/<\/?s>/g, '~');
   }
 
   if (dataSources && dataSources.IntegrationsAPI && requestName) {
