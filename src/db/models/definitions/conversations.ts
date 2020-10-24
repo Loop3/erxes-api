@@ -1,8 +1,9 @@
 import { Document, Schema } from 'mongoose';
-import { CONVERSATION_STATUSES } from './constants';
+import { CONVERSATION_OPERATOR_STATUS, CONVERSATION_STATUSES } from './constants';
 import { field } from './utils';
 
 export interface IConversation {
+  operatorStatus?: string;
   content?: string;
   integrationId: string;
   customerId?: string;
@@ -28,6 +29,8 @@ export interface IConversation {
 
   currentFlowActionId?: string;
   channelId?: string;
+
+  isCustomerRespondedLast?: boolean;
 }
 
 // Conversation schema
@@ -40,6 +43,11 @@ export interface IConversationDocument extends IConversation, Document {
 // Conversation schema
 export const conversationSchema = new Schema({
   _id: field({ pkey: true }),
+  operatorStatus: field({
+    type: String,
+    enum: CONVERSATION_OPERATOR_STATUS.ALL,
+    optional: true,
+  }),
   content: field({ type: String, optional: true }),
   integrationId: field({ type: String, index: true }),
   customerId: field({ type: String }),
@@ -77,4 +85,6 @@ export const conversationSchema = new Schema({
   currentFlowActionId: field({ type: String }),
 
   channelId: field({ type: String }),
+  
+  isCustomerRespondedLast: field({ type: Boolean }),
 });

@@ -24,6 +24,7 @@ export const types = `
     messageCount: Int
     number: Int
     tagIds: [String]
+    operatorStatus: String
 
     messages: [ConversationMessage]
     facebookPost: FacebookPost
@@ -36,8 +37,8 @@ export const types = `
     participatedUsers: [User]
     participatorCount: Int
     videoCallData: VideoCallData
-    
     currentFlowActionId: String
+    productBoardLink: String
   }
 
   type EngageData {
@@ -66,6 +67,7 @@ export const types = `
     conversationId: String
     internal: Boolean
     fromBot: Boolean
+    botData: JSON
     isGroupMsg: Boolean
     customerId: String
     userId: String
@@ -89,7 +91,7 @@ export const types = `
     erxesApiId: String
     attachments: [String]
     timestamp: Date
-    commentCount: Int
+    permalink_url: String
   }
 
   type FacebookComment {
@@ -99,12 +101,14 @@ export const types = `
     parentId: String
     recipientId:String
     senderId: String
+    permalink_url: String
     attachments: [String]
     content: String
     erxesApiId: String
     timestamp: Date
     customer: Customer
     commentCount: Int
+    isResolved: Boolean
   }
 
   type Email {
@@ -114,6 +118,8 @@ export const types = `
   type MailData {
     messageId: String,
     threadId: String,
+    replyTo: [String],
+    inReplyTo: String,
     subject: String,
     body: String,
     integrationEmail: String,
@@ -123,9 +129,7 @@ export const types = `
     bcc: [Email],
     accountId: String,
     replyToMessageId: [String],
-    replyTo: [String],
-    reply: [String],
-    references: String,
+    references: [String],
     headerId: String,
     attachments: [MailAttachment]
   }
@@ -180,8 +184,7 @@ export const types = `
   }
 `;
 
-const filterParams = `
-  limit: Int,
+const mutationFilterParams = `
   channelId: String
   status: String
   unassigned: String
@@ -189,10 +192,16 @@ const filterParams = `
   tag: String
   integrationType: String
   participating: String
+  awaitingResponse: String
   starred: String
-  ids: [String]
   startDate: String
   endDate: String
+`;
+
+const filterParams = `
+  limit: Int,
+  ids: [String]
+  ${mutationFilterParams}
 `;
 
 export const queries = `
@@ -207,11 +216,17 @@ export const queries = `
 
   converstationFacebookComments(
     postId: String!
+    isResolved: Boolean
     commentId: String
     senderId: String
     skip: Int
     limit: Int
   ): [FacebookComment]
+
+  converstationFacebookCommentsCount(
+    postId: String!
+    isResolved: Boolean
+  ): JSON
 
   conversationMessagesTotalCount(conversationId: String!): Int
   conversationCounts(${filterParams}, only: String): JSON
@@ -231,10 +246,14 @@ export const mutations = `
     contentType: String
   ): ConversationMessage
   conversationsReplyFacebookComment(conversationId: String, commentId: String, content: String): FacebookComment
+  conversationsChangeStatusFacebookComment(commentId: String): FacebookComment
   conversationsAssign(conversationIds: [String]!, assignedUserId: String): [Conversation]
   conversationsUnassign(_ids: [String]!): [Conversation]
   conversationsChangeStatus(_ids: [String]!, status: String!): [Conversation]
   conversationMarkAsRead(_id: String): Conversation
   conversationDeleteVideoChatRoom(name: String!): Boolean
   conversationCreateVideoChatRoom(_id: String!): VideoCallData
+  conversationCreateProductBoardNote(_id: String!): String
+  changeConversationOperator(_id: String! operatorStatus: String!): JSON
+  conversationResolveAll(${mutationFilterParams}): Int
 `;

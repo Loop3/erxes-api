@@ -39,9 +39,9 @@ import {
   Users,
   UsersGroups,
 } from '../db/models/index';
-import { sendMessage } from '../messageBroker';
+import messageBroker from '../messageBroker';
 import { MODULE_NAMES, RABBITMQ_QUEUES } from './constants';
-import { getSubServiceDomain, registerOnboardHistory, sendRequest } from './utils';
+import { getSubServiceDomain, registerOnboardHistory, sendRequest, sendToWebhook } from './utils';
 
 export type LogDesc = {
   [key: string]: any;
@@ -1251,6 +1251,8 @@ export const putCreateLog = async (params: ILogDataParams, user: IUserDocument) 
 
   const descriptions = await gatherDescriptions({ action: LOG_ACTIONS.CREATE, type: params.type, obj: params.object });
 
+  await sendToWebhook(LOG_ACTIONS.CREATE, params.type, params);
+
   return putLog(
     {
       ...params,
@@ -1275,6 +1277,8 @@ export const putUpdateLog = async (params: ILogDataParams, user: IUserDocument) 
     updatedDocument: params.updatedDocument,
   });
 
+  await sendToWebhook(LOG_ACTIONS.UPDATE, params.type, params);
+
   return putLog(
     {
       ...params,
@@ -1298,6 +1302,8 @@ export const putDeleteLog = async (params: ILogDataParams, user: IUserDocument) 
     obj: params.object,
   });
 
+  await sendToWebhook(LOG_ACTIONS.DELETE, params.type, params);
+
   return putLog(
     {
       ...params,
@@ -1311,7 +1317,7 @@ export const putDeleteLog = async (params: ILogDataParams, user: IUserDocument) 
 
 const putLog = async (params: IFinalLogParams, user: IUserDocument) => {
   try {
-    return sendMessage(RABBITMQ_QUEUES.PUT_LOG, {
+    return messageBroker().sendMessage(RABBITMQ_QUEUES.PUT_LOG, {
       ...params,
       createdBy: user._id,
       unicode: user.username || user.email || user._id,

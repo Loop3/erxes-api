@@ -1,8 +1,9 @@
 import './setup.ts';
 
 import * as faker from 'faker';
-import * as messageBroker from '../messageBroker';
+import messageBroker from '../messageBroker';
 
+import * as utils from '../data/utils';
 import {
   brandFactory,
   customerFactory,
@@ -15,6 +16,7 @@ import { Brands, Customers, EmailDeliveries, Integrations, Users } from '../db/m
 
 import { IntegrationsAPI } from '../data/dataSources';
 import { graphqlRequest } from '../db/connection';
+import { KIND_CHOICES } from '../db/models/definitions/constants';
 
 describe('mutations', () => {
   let _integration;
@@ -72,15 +74,18 @@ describe('mutations', () => {
   });
 
   test('Create messenger integration', async () => {
+    await Integrations.remove({});
+
     const args = {
-      name: _integration.name,
+      name: 'Integration Name',
       brandId: _brand._id,
       languageCode: 'en',
+      channelIds: ['randomId'],
     };
 
     const mutation = `
-      mutation integrationsCreateMessengerIntegration(${commonParamDefs}) {
-        integrationsCreateMessengerIntegration(${commonParams}) {
+      mutation integrationsCreateMessengerIntegration($channelIds: [String] ${commonParamDefs}) {
+        integrationsCreateMessengerIntegration(channelIds: $channelIds ${commonParams}) {
           name
           brandId
           languageCode
@@ -103,15 +108,18 @@ describe('mutations', () => {
       name: _integration.name,
       brandId: secondBrand._id,
       languageCode: 'en',
+      channelIds: ['randomId'],
     };
 
     const mutation = `
       mutation integrationsEditMessengerIntegration(
         $_id: String!
+        $channelIds: [String]
         ${commonParamDefs}
       ) {
         integrationsEditMessengerIntegration(
         _id: $_id
+        channelIds: $channelIds
         ${commonParams}
       ) {
           _id
@@ -305,6 +313,7 @@ describe('mutations', () => {
         $brandId: String!
         $accountId: String,
         $data: JSON
+        $channelIds: [String]
       ) {
         integrationsCreateExternalIntegration(
           kind: $kind
@@ -312,6 +321,7 @@ describe('mutations', () => {
           brandId: $brandId
           accountId: $accountId
           data: $data
+          channelIds: $channelIds
         ) {
           _id
           name
@@ -327,6 +337,7 @@ describe('mutations', () => {
       kind: 'nylas-gmail',
       name: 'Nyals gmail integration',
       brandId: brand._id,
+      channelIds: ['randomId'],
     };
 
     try {
@@ -355,6 +366,17 @@ describe('mutations', () => {
     const response = await graphqlRequest(mutation, 'integrationsCreateExternalIntegration', args, { dataSources });
 
     expect(response).toBeDefined();
+
+    args.kind = 'webhook';
+    args.data = { data: 'data' };
+
+    await graphqlRequest(mutation, 'integrationsCreateExternalIntegration', args, { dataSources });
+
+    const webhookResponse = await graphqlRequest(mutation, 'integrationsCreateExternalIntegration', args, {
+      dataSources,
+    });
+
+    expect(webhookResponse).toBeDefined();
 
     createIntegrationSpy.mockRestore();
   });
@@ -388,7 +410,7 @@ describe('mutations', () => {
 
     const integration1 = await integrationFactory();
 
-    const spy = jest.spyOn(messageBroker, 'sendRPCMessage');
+    const spy = jest.spyOn(messageBroker(), 'sendRPCMessage');
     spy.mockImplementation(() => Promise.resolve({ erxesApiIds: [integration1._id] }));
 
     const response = await graphqlRequest(mutation, 'integrationsRemoveAccount', { _id: 'accountId' });
@@ -403,7 +425,7 @@ describe('mutations', () => {
 
     spy.mockRestore();
 
-    const spy1 = jest.spyOn(messageBroker, 'sendRPCMessage');
+    const spy1 = jest.spyOn(messageBroker(), 'sendRPCMessage');
 
     spy1.mockImplementation(() => Promise.resolve({ erxesApiIds: [] }));
 
@@ -424,6 +446,7 @@ describe('mutations', () => {
         $bcc: [String]
         $from: String!
         $kind: String
+        $customerId: String
       ) {
         integrationSendMail(
           erxesApiId: $erxesApiId
@@ -433,9 +456,12 @@ describe('mutations', () => {
           bcc: $bcc
           from: $from
           kind: $kind
+          customerId: $customerId
         )
       }
     `;
+
+    const customer = await customerFactory({ primaryEmail: 'user@mail.com' });
 
     const args = {
       erxesApiId: 'erxesApiId',
@@ -445,21 +471,28 @@ describe('mutations', () => {
       bcc: ['bcc'],
       from: 'from',
       kind: 'nylas-gmail',
+      body: 'body',
     };
 
-    const customer = await customerFactory({ primaryEmail: args.to[0] });
-
     const spy = jest.spyOn(dataSources.IntegrationsAPI, 'sendEmail');
+    const mockReplaceEditorAttribute = jest.spyOn(utils, 'replaceEditorAttributes');
+
+    mockReplaceEditorAttribute.mockImplementation(() =>
+      Promise.resolve({
+        replacedContent: 'replacedContent',
+        replacers: [{ key: 'key', value: 'value' }],
+      }),
+    );
 
     spy.mockImplementation(() => Promise.resolve());
 
     await graphqlRequest(mutation, 'integrationSendMail', args, { dataSources });
 
-    const emailDeliverie = await EmailDeliveries.findOne({ customerId: customer._id });
+    const emailDelivery = await EmailDeliveries.findOne({ customerId: customer._id });
 
-    if (emailDeliverie) {
-      expect(JSON.stringify(emailDeliverie.to)).toEqual(JSON.stringify(args.to));
-      expect(customer._id).toEqual(emailDeliverie.customerId);
+    if (emailDelivery) {
+      expect(JSON.stringify(emailDelivery.to)).toEqual(JSON.stringify(args.to));
+      expect(customer._id).toEqual(emailDelivery.customerId);
     }
 
     spy.mockRestore();
@@ -469,6 +502,8 @@ describe('mutations', () => {
     } catch (e) {
       expect(e[0].message).toBeDefined();
     }
+
+    mockReplaceEditorAttribute.mockRestore();
   });
 
   test('Integrations remove', async () => {
@@ -505,10 +540,26 @@ describe('mutations', () => {
     removeSpy.mockRestore();
   });
 
+  test('test integrationsRemove() to catch error', async () => {
+    const mutation = `
+      mutation integrationsRemove($_id: String!) {
+        integrationsRemove(_id: $_id)
+      }
+    `;
+
+    const fbPostIntegration = await integrationFactory({ kind: 'facebook-post' });
+
+    try {
+      await graphqlRequest(mutation, 'integrationsRemove', { _id: fbPostIntegration._id });
+    } catch (e) {
+      expect(e[0].message).toBeDefined();
+    }
+  });
+
   test('Integrations archive', async () => {
     const mutation = `
-      mutation integrationsArchive($_id: String!) {
-        integrationsArchive(_id: $_id) {
+      mutation integrationsArchive($_id: String!, $status: Boolean!) {
+        integrationsArchive(_id: $_id, status: $status) {
           _id
           isActive
         }
@@ -516,30 +567,37 @@ describe('mutations', () => {
     `;
 
     const integration = await integrationFactory();
-    const response = await graphqlRequest(mutation, 'integrationsArchive', {
+    let response = await graphqlRequest(mutation, 'integrationsArchive', {
       _id: integration._id,
+      status: true,
     });
 
     expect(response.isActive).toBeFalsy();
+
+    response = await graphqlRequest(mutation, 'integrationsArchive', { _id: integration._id, status: false });
+
+    expect(response.isActive).toBeTruthy();
   });
 
   test('Integrations edit common fields', async () => {
     const mutation = `
-      mutation integrationsEditCommonFields($_id: String!, $name: String!, $brandId: String!) {
-        integrationsEditCommonFields(_id: $_id name: $name brandId: $brandId) {
+      mutation integrationsEditCommonFields($_id: String!, $name: String!, $brandId: String!, $channelIds: [String], $data: JSON) {
+        integrationsEditCommonFields(_id: $_id name: $name brandId: $brandId channelIds: $channelIds data: $data) {
           _id
           name
           brandId
+          webhookData
         }
       }
     `;
 
     const integration = await integrationFactory();
 
-    const doc = {
+    const doc: any = {
       _id: integration._id,
       name: 'updated',
       brandId: 'brandId',
+      channelIds: ['randomId'],
     };
 
     const response = await graphqlRequest(mutation, 'integrationsEditCommonFields', doc);
@@ -547,5 +605,48 @@ describe('mutations', () => {
     expect(response._id).toBe(doc._id);
     expect(response.name).toBe(doc.name);
     expect(response.brandId).toBe(doc.brandId);
+
+    const webhookIntegration = await integrationFactory({ kind: KIND_CHOICES.WEBHOOK });
+
+    doc._id = webhookIntegration._id;
+    doc.data = {
+      script: 'script',
+    };
+
+    const webhookResponse = await graphqlRequest(mutation, 'integrationsEditCommonFields', doc);
+
+    expect(webhookResponse).toBeDefined();
+  });
+
+  test('test integrationsSendSms()', async () => {
+    const mutation = `
+      mutation integrationsSendSms(
+        $integrationId: String!
+        $content: String!
+        $to: String!
+      ) {
+        integrationsSendSms(
+          integrationId: $integrationId
+          content: $content
+          to: $to
+        )
+      }
+    `;
+
+    const args = {
+      integrationId: 'integrationId',
+      content: 'Hello',
+      to: '+976123456789',
+    };
+
+    const spy = jest.spyOn(dataSources.IntegrationsAPI, 'sendSms');
+
+    spy.mockImplementation(() => Promise.resolve({ status: 'ok' }));
+
+    const response = await graphqlRequest(mutation, 'integrationsSendSms', args, { dataSources });
+
+    expect(response.status).toBe('ok');
+
+    spy.mockRestore();
   });
 });

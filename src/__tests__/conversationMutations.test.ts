@@ -2,17 +2,19 @@ import './setup.ts';
 
 import * as faker from 'faker';
 import * as sinon from 'sinon';
-import * as messageBroker from '../messageBroker';
+import messageBroker from '../messageBroker';
 
-import { conversationFactory, customerFactory, integrationFactory, userFactory } from '../db/factories';
-import { Conversations, Customers, Integrations, Users } from '../db/models';
-import { CONVERSATION_STATUSES, KIND_CHOICES } from '../db/models/definitions/constants';
+import { channelFactory, conversationFactory, customerFactory, integrationFactory, userFactory } from '../db/factories';
+import { ConversationMessages, Conversations, Customers, Integrations, Users } from '../db/models';
+import { CONVERSATION_OPERATOR_STATUS, CONVERSATION_STATUSES, KIND_CHOICES } from '../db/models/definitions/constants';
 
+import { AUTO_BOT_MESSAGES } from '../data/constants';
 import { IntegrationsAPI } from '../data/dataSources';
 import utils from '../data/utils';
 import { graphqlRequest } from '../db/connection';
 import { IConversationDocument } from '../db/models/definitions/conversations';
 import { ICustomerDocument } from '../db/models/definitions/customers';
+import { IIntegrationDocument } from '../db/models/definitions/integrations';
 import { IUserDocument } from '../db/models/definitions/users';
 
 const toJSON = value => {
@@ -34,6 +36,8 @@ describe('Conversation message mutations', () => {
   let telegramConversation: IConversationDocument;
   let lineConversation: IConversationDocument;
   let twilioConversation: IConversationDocument;
+  let telnyxConversation: IConversationDocument;
+  let leadIntegration: IIntegrationDocument;
 
   let user: IUserDocument;
   let customer: ICustomerDocument;
@@ -73,9 +77,13 @@ describe('Conversation message mutations', () => {
     dataSources = { IntegrationsAPI: new IntegrationsAPI() };
 
     user = await userFactory({});
-    customer = await customerFactory({ primaryEmail: faker.internet.email() });
+    customer = await customerFactory({
+      primaryEmail: faker.internet.email(),
+      primaryPhone: faker.phone.phoneNumber(),
+      phoneValidationStatus: 'valid',
+    });
 
-    const leadIntegration = await integrationFactory({
+    leadIntegration = await integrationFactory({
       kind: KIND_CHOICES.LEAD,
       messengerData: { welcomeMessage: 'welcome', notifyCustomer: true },
     });
@@ -114,6 +122,9 @@ describe('Conversation message mutations', () => {
 
     const twilioIntegration = await integrationFactory({ kind: KIND_CHOICES.SMOOCH_TWILIO });
     twilioConversation = await conversationFactory({ integrationId: twilioIntegration._id });
+
+    const telnyxIntegration = await integrationFactory({ kind: KIND_CHOICES.TELNYX });
+    telnyxConversation = await conversationFactory({ integrationId: telnyxIntegration._id, customerId: customer._id });
 
     const messengerIntegration = await integrationFactory({ kind: 'messenger' });
     messengerConversation = await conversationFactory({
@@ -182,7 +193,7 @@ describe('Conversation message mutations', () => {
   });
 
   test('Add conversation message using third party integration', async () => {
-    const mock = sinon.stub(messageBroker, 'sendMessage').callsFake(() => {
+    const mock = sinon.stub(messageBroker(), 'sendMessage').callsFake(() => {
       return Promise.resolve('success');
     });
 
@@ -263,6 +274,15 @@ describe('Conversation message mutations', () => {
       expect(e).toBeDefined();
     }
 
+    // telnyx
+    args.conversationId = telnyxConversation._id;
+
+    try {
+      await graphqlRequest(addMutation, 'conversationMessageAdd', args, { dataSources });
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+
     mock.restore();
   });
 
@@ -284,9 +304,10 @@ describe('Conversation message mutations', () => {
       }
     `;
 
-    let mock = sinon.stub(messageBroker, 'sendMessage').callsFake(() => {
+    let mock = sinon.stub(messageBroker(), 'sendMessage').callsFake(() => {
       return Promise.resolve('success');
     });
+
     const comment = await integrationFactory({ kind: 'facebook-post' });
 
     const args = {
@@ -303,12 +324,58 @@ describe('Conversation message mutations', () => {
 
     mock.restore();
 
-    mock = sinon.stub(messageBroker, 'sendMessage').callsFake(() => {
+    mock = sinon.stub(messageBroker(), 'sendMessage').callsFake(() => {
       throw new Error();
     });
 
     try {
       await graphqlRequest(commentMutation, 'conversationsReplyFacebookComment', args, {
+        dataSources: {},
+      });
+    } catch (e) {
+      expect(e).toBeDefined();
+    }
+
+    mock.restore();
+  });
+
+  test('Change status facebook comment', async () => {
+    const mutation = `
+        mutation conversationsChangeStatusFacebookComment(
+          $commentId: String,
+        ) {
+          conversationsChangeStatusFacebookComment(
+          commentId: $commentId,
+        ) {
+          commentId
+        }
+      }
+    `;
+
+    let mock = sinon.stub(messageBroker(), 'sendMessage').callsFake(() => {
+      return Promise.resolve('success');
+    });
+
+    const comment = await integrationFactory({ kind: 'facebook-post' });
+
+    const args = {
+      commentId: comment._id,
+    };
+
+    const response = await graphqlRequest(mutation, 'conversationsChangeStatusFacebookComment', args, {
+      dataSources: {},
+    });
+
+    expect(response).toBeDefined();
+
+    mock.restore();
+
+    mock = sinon.stub(messageBroker(), 'sendMessage').callsFake(() => {
+      throw new Error();
+    });
+
+    try {
+      await graphqlRequest(mutation, 'conversationsChangeStatusFacebookComment', args, {
         dataSources: {},
       });
     } catch (e) {
@@ -398,6 +465,47 @@ describe('Conversation message mutations', () => {
     expect(openConversation.status).toEqual(args.status);
   });
 
+  test('Resolve all conversation', async () => {
+    const mutation = `
+      mutation conversationResolveAll(
+        $channelId: String
+        $status: String
+        $unassigned: String
+        $brandId: String
+        $tag: String
+        $integrationType: String
+        $participating: String
+        $starred: String
+        $startDate: String
+        $endDate: String
+      ) {
+        conversationResolveAll(
+          channelId:$channelId
+          status:$status
+          unassigned:$unassigned
+          brandId:$brandId
+          tag:$tag
+          integrationType:$integrationType
+          participating:$participating
+          starred:$starred
+          startDate:$startDate
+          endDate:$endDate
+        )
+      }
+    `;
+
+    await channelFactory({ integrationIds: [leadIntegration._id], userId: user._id });
+
+    const updatedConversationCount = await graphqlRequest(
+      mutation,
+      'conversationResolveAll',
+      { integrationType: leadIntegration.kind },
+      { user },
+    );
+
+    expect(updatedConversationCount).toEqual(1);
+  });
+
   test('Mark conversation as read', async () => {
     process.env.DEFAULT_EMAIL_SERIVCE = ' ';
     process.env.COMPANY_EMAIL_FROM = ' ';
@@ -474,5 +582,74 @@ describe('Conversation message mutations', () => {
     expect(response.status).toBe('ongoing');
 
     mock.restore();
+  });
+
+  test('Create product board note', async () => {
+    const mutation = `
+      mutation conversationCreateProductBoardNote($_id: String!) {
+        conversationCreateProductBoardNote(_id: $_id) 
+      }
+    `;
+
+    const conversation = await conversationFactory();
+
+    try {
+      await graphqlRequest(mutation, 'conversationCreateProductBoardNote', { _id: conversation._id }, { dataSources });
+    } catch (e) {
+      expect(e[0].message).toBe('Integrations api is not running');
+    }
+
+    const mock = sinon.stub(dataSources.IntegrationsAPI, 'createProductBoardNote').callsFake(() => {
+      return Promise.resolve('productBoardLink');
+    });
+
+    const response = await graphqlRequest(
+      mutation,
+      'conversationCreateProductBoardNote',
+      { _id: conversation._id },
+      { dataSources },
+    );
+
+    expect(response).toBe('productBoardLink');
+
+    mock.restore();
+  });
+
+  test('Change conversation operator status', async () => {
+    const conversation = await conversationFactory({ operatorStatus: CONVERSATION_OPERATOR_STATUS.BOT });
+
+    const mutation = `
+      mutation changeConversationOperator($_id: String!, $operatorStatus: String!) {
+        changeConversationOperator(_id: $_id, operatorStatus: $operatorStatus)
+      }
+    `;
+
+    await graphqlRequest(
+      mutation,
+      'changeConversationOperator',
+      { _id: conversation._id, operatorStatus: CONVERSATION_OPERATOR_STATUS.OPERATOR },
+      { dataSources },
+    );
+
+    const message = await ConversationMessages.findOne({ conversationId: conversation._id });
+
+    if (message) {
+      expect(message.botData).toEqual([
+        {
+          type: 'text',
+          text: AUTO_BOT_MESSAGES.CHANGE_OPERATOR,
+        },
+      ]);
+    } else {
+      fail('Auto message not found');
+    }
+
+    const updatedConversation = await Conversations.findOne({ _id: conversation._id });
+
+    if (updatedConversation) {
+      expect(updatedConversation.operatorStatus).toBe(CONVERSATION_OPERATOR_STATUS.OPERATOR);
+    } else {
+      fail('Conversation not found to update operator status');
+    }
   });
 });

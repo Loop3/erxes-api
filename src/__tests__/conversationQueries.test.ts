@@ -34,6 +34,7 @@ describe('conversationQueries', () => {
     $ids: [String]
     $startDate: String
     $endDate: String
+    $awaitingResponse: String
   `;
 
   const commonParams = `
@@ -49,6 +50,7 @@ describe('conversationQueries', () => {
     ids: $ids
     startDate: $startDate
     endDate: $endDate
+    awaitingResponse: $awaitingResponse
   `;
 
   const qryConversations = `
@@ -88,6 +90,7 @@ describe('conversationQueries', () => {
         messageCount
         number
         tagIds
+        productBoardLink
         videoCallData {
           url
           name
@@ -435,6 +438,15 @@ describe('conversationQueries', () => {
     await conversationFactory({ integrationId: integration._id });
 
     const responses = await graphqlRequest(qryConversations, 'conversations', { participating: 'true' }, { user });
+
+    expect(responses.length).toBe(1);
+  });
+
+  test('Conversations filtered by awaiting response', async () => {
+    const conv = await conversationFactory({ integrationId: integration._id });
+    await conversationMessageFactory({ conversationId: conv._id, customerId: 'customerId' });
+
+    const responses = await graphqlRequest(qryConversations, 'conversations', { awaitingResponse: 'true' }, { user });
 
     expect(responses.length).toBe(1);
   });
@@ -976,7 +988,7 @@ describe('conversationQueries', () => {
     );
 
     const spy = jest.spyOn(dataSources.IntegrationsAPI, 'fetchApi');
-    spy.mockImplementation(() => Promise.resolve([]));
+    spy.mockImplementation(() => Promise.resolve(''));
 
     const response = await graphqlRequest(
       qryConversationDetail,
@@ -986,6 +998,35 @@ describe('conversationQueries', () => {
     );
 
     expect(response.videoCallData).not.toBeNull();
+
+    spy.mockRestore();
+  });
+
+  test('Conversation detail product board', async () => {
+    const messengerConversation = await conversationFactory();
+    await conversationMessageFactory({
+      conversationId: messengerConversation._id,
+      contentType: MESSAGE_TYPES.VIDEO_CALL,
+    });
+
+    await graphqlRequest(
+      qryConversationDetail,
+      'conversationDetail',
+      { _id: messengerConversation._id },
+      { user, dataSources },
+    );
+
+    const spy = jest.spyOn(dataSources.IntegrationsAPI, 'fetchApi');
+    spy.mockImplementation(() => Promise.resolve(''));
+
+    const response = await graphqlRequest(
+      qryConversationDetail,
+      'conversationDetail',
+      { _id: messengerConversation._id },
+      { user, dataSources },
+    );
+
+    expect(response.productBoardLink).not.toBeNull();
 
     spy.mockRestore();
   });
@@ -1070,6 +1111,27 @@ describe('conversationQueries', () => {
         converstationFacebookComments(postId: $postId) {
           postId
         }
+      }
+    `;
+
+    try {
+      await graphqlRequest(qry, 'converstationFacebookComments', { postId: 'postId' }, { dataSources });
+    } catch (e) {
+      expect(e[0].message).toBe('Integrations api is not running');
+    }
+
+    const spy = jest.spyOn(dataSources.IntegrationsAPI, 'fetchApi');
+    spy.mockImplementation(() => Promise.resolve([]));
+
+    await graphqlRequest(qry, 'converstationFacebookComments', { postId: 'postId' }, { dataSources });
+
+    spy.mockRestore();
+  });
+
+  test('Facebook comments', async () => {
+    const qry = `
+      query converstationFacebookCommentsCount($postId: String!, $isResolved: Boolean) {
+        converstationFacebookCommentsCount(postId: $postId, isResolved:$isResolved) 
       }
     `;
 
