@@ -5,6 +5,12 @@ export const CONVERSATION_STATUSES = {
   ALL: ['new', 'open', 'closed'],
 };
 
+export const CONVERSATION_OPERATOR_STATUS = {
+  BOT: 'bot',
+  OPERATOR: 'operator',
+  ALL: ['bot', 'operator'],
+};
+
 export const TAG_TYPES = {
   CONVERSATION: 'conversation',
   CUSTOMER: 'customer',
@@ -81,6 +87,8 @@ export const KIND_CHOICES = {
   SMOOCH_TWILIO: 'smooch-twilio',
   WHATSAPP: 'whatsapp',
   WHATSPRO: 'whatspro',
+  TELNYX: 'telnyx',
+  WEBHOOK: 'webhook',
   ALL: [
     'messenger',
     'lead',
@@ -102,6 +110,8 @@ export const KIND_CHOICES = {
     'smooch-twilio',
     'whatsapp',
     'whatspro',
+    'telnyx',
+    'webhook',
   ],
 };
 
@@ -126,6 +136,7 @@ export const INTEGRATION_NAMES_MAP = {
   'smooch-twilio': 'Twilio SMS',
   whatsapp: 'WhatsApp',
   whatspro: 'WhatsPro',
+  webhook: 'Webhook',
 };
 
 // messenger data availability constants
@@ -341,6 +352,19 @@ export const DEFAULT_COMPANY_INDUSTRY_TYPES = [
   'Transportation Infrastructure',
   'Water Utilities',
   'Wireless Telecommunication Services',
+  'Transportation',
+  'Mining',
+  'Finance',
+  'Group company',
+  'Government',
+  'Utility',
+  'Education',
+  'Manufacturing',
+  'Communication',
+  'Retail',
+  'Health',
+  'Construction',
+  'Management',
 ];
 
 export const COMPANY_INDUSTRY_TYPES = [...DEFAULT_COMPANY_INDUSTRY_TYPES];
@@ -366,6 +390,14 @@ export const BOARD_STATUSES = {
   ACTIVE: 'active',
   ARCHIVED: 'archived',
   ALL: ['active', 'archived'],
+};
+
+export const TIME_TRACK_TYPES = {
+  STARTED: 'started',
+  STOPPED: 'stopped',
+  PAUSED: 'paused',
+  COMPLETED: 'completed',
+  ALL: ['started', 'stopped', 'paused', 'completed'],
 };
 
 export const BOARD_TYPES = {
@@ -616,3 +648,25 @@ export const SEGMENT_STRING_OPERATORS = ['e', 'dne', 'c', 'dnc'];
 export const SEGMENT_BOOLEAN_OPERATORS = ['is', 'ins', 'it', 'if'];
 export const SEGMENT_NUMBER_OPERATORS = ['numbere', 'numberdne', 'numberigt', 'numberilt'];
 export const SEGMENT_DATE_OPERATORS = ['dateigt', 'dateilt', 'wobm', 'woam', 'wobd', 'woad', 'drlt', 'drgt'];
+
+export const WEBHOOK_ACTIONS = [
+  { label: 'Customer created', action: 'create', type: 'customer' },
+  { label: 'Customer updated', action: 'update', type: 'customer' },
+  { label: 'Customer deleted', action: 'delete', type: 'customer' },
+  { label: 'Company created', action: 'create', type: 'company' },
+  { label: 'Company updated', action: 'update', type: 'company' },
+  { label: 'Company deleted', action: 'delete', type: 'company' },
+  { label: 'Knowledge Base created', action: 'create', type: 'knowledgeBaseArticle' },
+  { label: 'Knowledge Base updated', action: 'update', type: 'knowledgeBaseArticle' },
+  { label: 'Knowledge Base deleted', action: 'delete', type: 'knowledgeBaseArticle' },
+  { label: 'User messages', action: 'create', type: 'userMessages' },
+  { label: 'Customer messages', action: 'create', type: 'customerMessages' },
+  { label: 'Engage messages', action: 'create', type: 'engageMessages' },
+  { label: 'Popup submitted', action: 'create', type: 'popupSubmitted' },
+];
+
+export const WEBHOOK_STATUS = {
+  AVAILABLE: 'available',
+  UNAVAILABLE: 'unavailable',
+  ALL: ['available', 'unavailable'],
+};

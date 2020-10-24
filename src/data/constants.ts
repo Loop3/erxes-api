@@ -25,8 +25,9 @@ export const FORM_FIELDS = {
     BLANK: '',
     NUMBER: 'number',
     DATE: 'date',
+    DATETIME: 'datetime',
     EMAIL: 'email',
-    ALL: ['', 'number', 'date', 'email'],
+    ALL: ['', 'number', 'date', 'datetime', 'email'],
   },
 };
 
@@ -34,7 +35,17 @@ export const FIELD_CONTENT_TYPES = {
   FORM: 'form',
   CUSTOMER: 'customer',
   COMPANY: 'company',
-  ALL: ['form', 'customer', 'company'],
+  PRODUCT: 'product',
+  ALL: ['form', 'customer', 'company', 'product'],
+};
+
+export const EXTEND_FIELDS = {
+  CUSTOMER: [
+    { name: 'tag', label: 'Tag' },
+    { name: 'ownerEmail', label: 'Owner' },
+    { name: 'companiesPrimaryNames', label: 'Companies' },
+  ],
+  PRODUCT: [{ name: 'categoryCode', label: 'Category Code' }],
 };
 
 export const COC_LEAD_STATUS_TYPES = [
@@ -282,6 +293,7 @@ export const MODULE_NAMES = {
   FLOW_ACTION_TYPE: 'flowActionType',
   FLOW_ACTION: 'flowAction',
   FLOW: 'flow',
+  WEBHOOK: 'webhook',
 };
 
 export const RABBITMQ_QUEUES = {
@@ -289,4 +301,13 @@ export const RABBITMQ_QUEUES = {
   RPC_API_TO_INTEGRATIONS: 'rpc_queue:api_to_integrations',
   RPC_API_TO_WORKERS: 'rpc_queue:api_to_workers',
   WORKERS: 'workers',
+};
+
+export const AUTO_BOT_MESSAGES = {
+  NO_RESPONSE: 'No reply',
+  CHANGE_OPERATOR: 'The team will reply in message',
+};
+
+export const BOT_MESSAGE_TYPES = {
+  SAY_SOMETHING: 'say_something',
 };
