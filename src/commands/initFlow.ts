@@ -23,7 +23,7 @@ connect()
         'erxes.action.send.sms',
         'erxes.action.define.timeout',
         'erxes.action.send.internal.message',
-        'erxes.action.execute.autmations.flow',
+        'erxes.action.execute.automation.flow',
         'erxes.action.execute.action',
         'erxes.action.conditional',
         'erxes.action.wait.for.interaction',

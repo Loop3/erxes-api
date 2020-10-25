@@ -41,7 +41,7 @@ const checkIfIsCondition = (condition: IFlowActionValueCondition, content: strin
             case 'onboarding_active':
               let now = moment.utc();
               now = now.utcOffset(-180);
-              let not = [0, 6].includes(now.weekday()) || now.hour() < 9 || now.hour() > 18;
+              let not = [0].includes(now.weekday()) || now.hour() < 9 || now.hour() > 18;
               return (condition.variable.value === '0' && not) || (condition.variable.value === '1' && !not);
 
             default:
@@ -52,6 +52,8 @@ const checkIfIsCondition = (condition: IFlowActionValueCondition, content: strin
         default:
           return condition.values.includes(content);
       }
+    case '*':
+      return true;
     default:
       return false;
   }
@@ -138,7 +140,7 @@ const handleMessage = async (msg: IMessageDocument) => {
           // 	sendNextMessage = true;
 
           break;
-        case 'erxes.action.execute.autmations.flow':
+        case 'erxes.action.execute.automation.flow':
           flowAction = await FlowActions.findOne({
             flowId: flowAction?.value,
             order: 0,
@@ -256,7 +258,7 @@ const handleMessage = async (msg: IMessageDocument) => {
       handleTransferToAgent(flowAction, conversation, integration, condition);
 
       break;
-    case 'erxes.action.execute.autmations.flow':
+    case 'erxes.action.execute.automation.flow':
       sendNextMessage = true;
 
       break;
