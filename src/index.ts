@@ -1,8 +1,10 @@
 import * as cookieParser from 'cookie-parser';
 import * as cors from 'cors';
 import * as dotenv from 'dotenv';
+import * as telemetry from 'erxes-telemetry';
 import * as express from 'express';
 import * as fs from 'fs';
+import * as helmet from 'helmet';
 import { createServer } from 'http';
 import * as mongoose from 'mongoose';
 import * as path from 'path';
@@ -10,6 +12,7 @@ import * as request from 'request';
 import { filterXSS } from 'xss';
 import apolloServer from './apolloClient';
 import { buildFile } from './data/modules/fileExporter/exporter';
+import { templateExport } from './data/modules/fileExporter/templateExport';
 import insightExports from './data/modules/insights/insightExports';
 import {
   authCookieOptions,
@@ -23,13 +26,16 @@ import {
 } from './data/utils';
 import { updateContactsValidationStatus, updateContactValidationStatus } from './data/verifierUtils';
 import { connect, mongoStatus } from './db/connection';
+import { Users } from './db/models';
+import initWatchers from './db/watchers';
 import { debugBase, debugExternalApi, debugInit } from './debuggers';
 import { identifyCustomer, trackCustomEvent, trackViewPageEvent, updateCustomerProperty } from './events';
-import { initConsumer, rabbitMQStatus } from './messageBroker';
+import { initMemoryStorage } from './inmemoryStorage';
+import { initBroker } from './messageBroker';
 import { importer, uploader } from './middlewares/fileMiddleware';
 import userMiddleware from './middlewares/userMiddleware';
+import webhookMiddleware from './middlewares/webhookMiddleware';
 import widgetsMiddleware from './middlewares/widgetsMiddleware';
-import { initRedis, redisStatus } from './redisClient';
 import init from './startup';
 
 // load environment variables
@@ -59,30 +65,70 @@ const pipeRequest = (req: any, res: any, next: any, url: string) => {
   );
 };
 
+const handleTelnyxWebhook = (req, res, next, hookName: string) => {
+  const ENGAGES_API_DOMAIN = getSubServiceDomain({ name: 'ENGAGES_API_DOMAIN' });
+
+  if (NODE_ENV === 'test') {
+    return res.json(req.body);
+  }
+
+  return pipeRequest(req, res, next, `${ENGAGES_API_DOMAIN}/telnyx/${hookName}`);
+};
+
 const MAIN_APP_DOMAIN = getEnv({ name: 'MAIN_APP_DOMAIN' });
 const WIDGETS_DOMAIN = getSubServiceDomain({ name: 'WIDGETS_DOMAIN' });
-const DASHBOARD_DOMAIN = getSubServiceDomain({ name: 'DASHBOARD_DOMAIN' });
 const INTEGRATIONS_API_DOMAIN = getSubServiceDomain({ name: 'INTEGRATIONS_API_DOMAIN' });
+const CLIENT_PORTAL_DOMAIN = getSubServiceDomain({ name: 'CLIENT_PORTAL_DOMAIN' });
 
-const app = express();
+export const app = express();
 
 app.disable('x-powered-by');
+
+// handle engage trackers
+app.post(`/service/engage/tracker`, async (req, res, next) => {
+  const ENGAGES_API_DOMAIN = getSubServiceDomain({ name: 'ENGAGES_API_DOMAIN' });
+
+  debugBase('SES notification received ======');
+
+  return pipeRequest(req, res, next, `${ENGAGES_API_DOMAIN}/service/engage/tracker`);
+});
+
 app.use(express.urlencoded({ extended: true }));
+
 app.use(
   express.json({
     limit: '15mb',
   }),
 );
+
+// relay telnyx sms web hook
+app.post(`/telnyx/webhook`, (req, res, next) => {
+  return handleTelnyxWebhook(req, res, next, 'webhook');
+});
+
+// relay telnyx sms web hook fail over url
+app.post(`/telnyx/webhook-failover`, (req, res, next) => {
+  return handleTelnyxWebhook(req, res, next, 'webhook-failover');
+});
+
 app.use(cookieParser());
 
 const corsOptions = {
   credentials: true,
-  origin: [MAIN_APP_DOMAIN, WIDGETS_DOMAIN, DASHBOARD_DOMAIN],
+  origin: [MAIN_APP_DOMAIN, WIDGETS_DOMAIN, CLIENT_PORTAL_DOMAIN],
 };
 
 app.use(cors(corsOptions));
 
-app.get('/set-frontend-cookies', async (req: any, res) => {
+app.use(helmet({ frameguard: { action: 'sameorigin' } }));
+
+app.get('/initial-setup', async (req: any, res) => {
+  const userCount = await Users.countDocuments();
+
+  if (userCount === 0) {
+    return res.send('no owner');
+  }
+
   const envMaps = JSON.parse(req.query.envs || '{}');
 
   for (const key of Object.keys(envMaps)) {
@@ -92,7 +138,8 @@ app.get('/set-frontend-cookies', async (req: any, res) => {
   return res.send('success');
 });
 
-app.get('/script-manager', widgetsMiddleware);
+app.post('/webhooks/:id', webhookMiddleware);
+app.get('/script-manager', cors({ origin: '*' }), widgetsMiddleware);
 
 // events
 app.post('/events-receive', async (req, res) => {
@@ -145,25 +192,11 @@ app.get('/download-template', async (req: any, res) => {
 });
 
 // for health check
-app.get('/status', async (_req, res, next) => {
+app.get('/health', async (_req, res, next) => {
   try {
     await mongoStatus();
   } catch (e) {
     debugBase('MongoDB is not running');
-    return next(e);
-  }
-
-  try {
-    await redisStatus();
-  } catch (e) {
-    debugBase('Redis is not running');
-    return next(e);
-  }
-
-  try {
-    await rabbitMQStatus();
-  } catch (e) {
-    debugBase('RabbitMQ is not running');
     return next(e);
   }
 
@@ -195,6 +228,19 @@ app.get('/file-export', async (req: any, res) => {
     res.attachment(`${result.name}.xlsx`);
 
     return res.send(result.response);
+  } catch (e) {
+    return res.end(filterXSS(e.message));
+  }
+});
+
+app.get('/template-export', async (req: any, res) => {
+  const { importType } = req.query;
+
+  try {
+    const { name, response } = await templateExport(req.query);
+
+    res.attachment(`${name}.${importType}`);
+    return res.send(response);
   } catch (e) {
     return res.end(filterXSS(e.message));
   }
@@ -252,6 +298,8 @@ app.post('/delete-file', async (req: any, res) => {
 
 app.post('/upload-file', uploader);
 
+app.post('/upload-file&responseType=json', uploader);
+
 // redirect to integration
 app.get('/connect-integration', async (req: any, res, _next) => {
   if (!req.user) {
@@ -268,39 +316,16 @@ app.post('/import-file', importer);
 
 // unsubscribe
 app.get('/unsubscribe', async (req: any, res) => {
-  const unsubscribed = await handleUnsubscription(req.query);
+  await handleUnsubscription(req.query);
 
-  if (unsubscribed) {
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    const template = fs.readFileSync(__dirname + '/private/emailTemplates/unsubscribe.html');
-    res.send(template);
-  }
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
 
-  res.end();
+  const template = fs.readFileSync(__dirname + '/private/emailTemplates/unsubscribe.html');
+
+  return res.send(template);
 });
 
 apolloServer.applyMiddleware({ app, path: '/graphql', cors: corsOptions });
-
-// handle engage trackers
-app.post(`/service/engage/tracker`, async (req, res, next) => {
-  const ENGAGES_API_DOMAIN = getSubServiceDomain({ name: 'ENGAGES_API_DOMAIN' });
-
-  return pipeRequest(req, res, next, `${ENGAGES_API_DOMAIN}/service/engage/tracker`);
-});
-
-// relay telnyx sms web hook
-app.post(`/telnyx/webhook`, async (req, res, next) => {
-  const ENGAGES_API_DOMAIN = getSubServiceDomain({ name: 'ENGAGES_API_DOMAIN' });
-
-  return pipeRequest(req, res, next, `${ENGAGES_API_DOMAIN}/telnyx/webhook`);
-});
-
-// relay telnyx sms web hook fail over url
-app.post(`/telnyx/webhook-failover`, async (req, res, next) => {
-  const ENGAGES_API_DOMAIN = getSubServiceDomain({ name: 'ENGAGES_API_DOMAIN' });
-
-  return pipeRequest(req, res, next, `${ENGAGES_API_DOMAIN}/telnyx/webhook-failover`);
-});
 
 // verifier web hook
 app.post(`/verifier/webhook`, async (req, res) => {
@@ -328,22 +353,35 @@ app.use((error, _req, res, _next) => {
 // Wrap the Express server
 const httpServer = createServer(app);
 
-// subscriptions server
 const PORT = getEnv({ name: 'PORT' });
+const MONGO_URL = getEnv({ name: 'MONGO_URL' });
+const TEST_MONGO_URL = getEnv({ name: 'TEST_MONGO_URL' });
 
+// subscriptions server
 apolloServer.installSubscriptionHandlers(httpServer);
 
 httpServer.listen(PORT, () => {
+  let mongoUrl = MONGO_URL;
+
+  if (NODE_ENV === 'test') {
+    mongoUrl = TEST_MONGO_URL;
+  }
+
   // connect to mongo database
-  connect().then(async () => {
-    initConsumer().catch(e => {
-      debugBase(`Error ocurred during rabbitmq init ${e.message}`);
+  connect(mongoUrl).then(async () => {
+    initBroker(app).catch(e => {
+      debugBase(`Error ocurred during message broker init ${e.message}`);
     });
 
-    initRedis();
+    initMemoryStorage();
+
+    initWatchers();
 
     init()
       .then(() => {
+        telemetry.trackCli('server_started');
+        telemetry.startBackgroundUpdate();
+
         debugBase('Startup successfully started');
       })
       .catch(e => {

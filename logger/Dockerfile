@@ -1,17 +1,8 @@
-FROM node:12.16.3-slim
+FROM node:12.18-slim
 
-ARG DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && \
-    apt-get install -y \
-    gnupg2 git nano && \
-    rm -rf /var/lib/apt/lists/*
-
-WORKDIR /logger
-
-COPY --chown=node:node . /logger
-
-RUN chown -R node:node /logger
+WORKDIR /erxes-logger/
+RUN chown -R node:node /erxes-logger
+COPY --chown=node:node . /erxes-logger
 
 USER node
 

@@ -74,12 +74,20 @@ export default class IntegrationsAPI extends RESTDataSource {
   public async replyWhatsApp(params) {
     return this.post('/whatsapp/reply', params);
   }
+  
+  public async replyWhatsPro(params) {
+    return this.post('/whatsPro/reply', params);
+  }
 
   public async updateConfigs(configsMap) {
     return this.post('/update-configs', { configsMap });
   }
 
-  public async replyWhatsPro(params) {
-    return this.post('/whatsPro/reply', params);
+  public async createProductBoardNote(params) {
+    return this.post('/productBoard/create-note', params);
+  }
+
+  public async sendSms(params) {
+    return this.post('/telnyx/send-sms', params);
   }
 }
