@@ -55,7 +55,7 @@ export const receiveRpcMessage = async msg => {
     }
 
     if (customer) {
-      await Customers.updateCustomer(customer._id, doc, hostname);
+      await Customers.updateCustomer(customer._id, doc);
       return sendSuccess({ _id: customer._id });
     } else {
       customer = await Customers.createCustomer({
