@@ -1,5 +1,4 @@
 import * as moment from 'moment';
-import * as strip from 'strip';
 import {
   ConversationMessages,
   Conversations,
@@ -20,11 +19,14 @@ import {
   IFlowActionValueCondition,
 } from '../../../db/models/definitions/flowActions';
 import { IConversationDocument } from '../../../db/models/definitions/conversations';
-import { sendMessage } from '../../../messageBroker';
 import { KIND_CHOICES } from '../../../db/models/definitions/constants';
-import { IConversationMessageAdd, publishConversationsChanged } from '../../resolvers/mutations/conversations';
+import {
+  IConversationMessageAdd,
+  publishConversationsChanged,
+  sendConversationToIntegrations,
+  publishMessage,
+} from '../../resolvers/mutations/conversations';
 import { graphqlPubsub } from '../../../pubsub';
-import Messages from '../../../db/models/ConversationMessages';
 import { IIntegrationDocument } from '../../../db/models/definitions/integrations';
 import { IDetail, IUserDocument } from '../../../db/models/definitions/users';
 
@@ -221,7 +223,7 @@ const handleMessage = async (msg: IMessageDocument) => {
 
   switch (flowAction.type) {
     case 'erxes.action.send.message':
-      await proccessSendMessage(flowAction, conversation);
+      await processSendMessage(flowAction, conversation);
 
       if (
         await FlowActions.findOne({
@@ -233,7 +235,7 @@ const handleMessage = async (msg: IMessageDocument) => {
 
       break;
     case 'erxes.action.to.ask':
-      await proccessSendMessage(flowAction, conversation);
+      await processSendMessage(flowAction, conversation);
       break;
 
     case 'erxes.action.define.department':
@@ -416,7 +418,7 @@ const handleTransferToAgent = async (
   }
 };
 
-const proccessSendMessage = async (flowAction: IFlowActionDocument, conversation: IConversationDocument) => {
+const processSendMessage = async (flowAction: IFlowActionDocument, conversation: IConversationDocument) => {
   const integration = await Integrations.getIntegration(conversation.integrationId);
 
   if (!integration) return;
@@ -514,73 +516,6 @@ const handleSendMessage = async (
 
   // Publishing both admin & client
   publishMessage(dbMessage, conversation.customerId);
-};
-
-/**
- *  Send conversation to integrations
- */
-
-const sendConversationToIntegrations = (
-  type: string,
-  integrationId: string,
-  conversationId: string,
-  requestName: string,
-  doc: IConversationMessageAdd,
-  dataSources: any,
-  action?: string,
-  messageId?: string,
-) => {
-  if (type === 'facebook') {
-    return sendMessage('erxes-api:integrations-notification', {
-      action,
-      type,
-      payload: JSON.stringify({
-        integrationId,
-        conversationId,
-        content: strip(doc.content),
-        attachments: doc.attachments || [],
-      }),
-    });
-  }
-
-  if (type === 'whatspro') {
-    doc.content = doc.content.replace(/<\/?(b|strong)>/g, '*');
-    doc.content = doc.content.replace(/<br ?\/?>/g, '\n');
-    doc.content = doc.content.replace(/<\/?i>/g, '_');
-    doc.content = doc.content.replace(/<\/?s>/g, '~');
-  }
-
-  if (dataSources && dataSources.IntegrationsAPI && requestName) {
-    return dataSources.IntegrationsAPI[requestName]({
-      conversationId,
-      integrationId,
-      messageId,
-      content: strip(doc.content),
-      attachments: doc.attachments || [],
-    });
-  }
-};
-
-/**
- * Publish admin's message
- */
-export const publishMessage = async (message: IMessageDocument, customerId?: string) => {
-  graphqlPubsub.publish('conversationMessageInserted', {
-    conversationMessageInserted: message,
-  });
-
-  // widget is listening for this subscription to show notification
-  // customerId available means trying to notify to client
-  if (customerId) {
-    const unreadCount = await Messages.widgetsGetUnreadMessagesCount(message.conversationId);
-
-    graphqlPubsub.publish('conversationAdminMessageInserted', {
-      conversationAdminMessageInserted: {
-        customerId,
-        unreadCount,
-      },
-    });
-  }
 };
 
 export default {

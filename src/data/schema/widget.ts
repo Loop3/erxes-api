@@ -11,6 +11,7 @@ export const types = `
   type ConversationDetailResponse {
     _id: String
     messages: [ConversationMessage]
+    operatorStatus: String
     participatedUsers: [User]
     isOnline: Boolean
     supporters: [User]
@@ -33,6 +34,12 @@ export const types = `
     text: String
   }
 
+  type MessengerSupportersResponse {
+    supporters: [User]
+    isOnline: Boolean
+    serverTime: String
+  }
+
   input FieldValueInput {
     _id: String!
     type: String
@@ -49,7 +56,7 @@ export const queries = `
   widgetsMessages(conversationId: String): [ConversationMessage]
   widgetsUnreadCount(conversationId: String): Int
   widgetsTotalUnreadCount(integrationId: String!, customerId: String!): Int
-  widgetsMessengerSupporters(integrationId: String!): [User]
+  widgetsMessengerSupporters(integrationId: String!): MessengerSupportersResponse
   widgetsKnowledgeBaseArticles(topicId: String!, searchString: String) : [KnowledgeBaseArticle]
   widgetsKnowledgeBaseTopicDetail(_id: String!): KnowledgeBaseTopic
 `;
@@ -83,12 +90,22 @@ export const mutations = `
     contentType: String
   ): ConversationMessage
 
+  widgetBotRequest(
+    customerId: String!
+    conversationId: String!
+    integrationId: String!,
+    message: String!
+    payload: String!
+    type: String!
+    ): JSON
+
   widgetsReadConversationMessages(conversationId: String): JSON
   widgetsSaveCustomerGetNotified(customerId: String!, type: String!, value: String!): JSON
 
   widgetsLeadConnect(
     brandCode: String!,
-    formCode: String!
+    formCode: String!,
+    cachedCustomerId: String
   ): FormConnectResponse
 
   widgetsSaveLead(

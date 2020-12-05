@@ -1,6 +1,6 @@
 import * as strip from 'strip';
 import * as _ from 'underscore';
-import { ConversationMessages, Conversations, Customers, Integrations, Users } from '../../../db/models';
+import { ConversationMessages, Conversations, Customers, Integrations, Users, Tags } from '../../../db/models';
 import Messages from '../../../db/models/ConversationMessages';
 import {
   KIND_CHOICES,
@@ -12,11 +12,13 @@ import { IMessageDocument } from '../../../db/models/definitions/conversationMes
 import { IConversationDocument } from '../../../db/models/definitions/conversations';
 import { IUserDocument } from '../../../db/models/definitions/users';
 import { debugExternalApi } from '../../../debuggers';
-import { sendMessage } from '../../../messageBroker';
+import messageBroker from '../../../messageBroker';
 import { graphqlPubsub } from '../../../pubsub';
+import { AUTO_BOT_MESSAGES } from '../../constants';
 import { checkPermission, requireLogin } from '../../permissions/wrappers';
 import { IContext } from '../../types';
 import utils from '../../utils';
+import QueryBuilder, { IListArgs } from '../queries/conversationQueryBuilder';
 
 export interface IConversationMessageAdd {
   conversationId: string;
@@ -37,7 +39,7 @@ interface IReplyFacebookComment {
  *  Send conversation to integrations
  */
 
-const sendConversationToIntegrations = (
+export const sendConversationToIntegrations = (
   type: string,
   integrationId: string,
   conversationId: string,
@@ -58,7 +60,7 @@ const sendConversationToIntegrations = (
       attachments.push({ type: 'image', url: img });
     });
 
-    return sendMessage('erxes-api:integrations-notification', {
+    return messageBroker().sendMessage('erxes-api:integrations-notification', {
       action,
       type,
       payload: JSON.stringify({
@@ -68,6 +70,13 @@ const sendConversationToIntegrations = (
         attachments: doc.attachments || [],
       }),
     });
+  }
+
+  if (type === 'whatspro') {
+    doc.content = doc.content.replace(/<\/?(b|strong)>/g, '*');
+    doc.content = doc.content.replace(/<br ?\/?>/g, '\n');
+    doc.content = doc.content.replace(/<\/?i>/g, '_');
+    doc.content = doc.content.replace(/<\/?s>/g, '~');
   }
 
   if (dataSources && dataSources.IntegrationsAPI && requestName) {
@@ -262,6 +271,32 @@ const conversationMutations = {
 
     const message = await ConversationMessages.addMessage(doc, user._id);
 
+    /**
+     * Send SMS only when:
+     * - integration is of kind telnyx
+     * - customer has primary phone filled
+     * - customer's primary phone is valid
+     * - content length within 160 characters
+     */
+    if (
+      kind === KIND_CHOICES.TELNYX &&
+      customer &&
+      customer.primaryPhone &&
+      customer.phoneValidationStatus === 'valid' &&
+      doc.content.length <= 160
+    ) {
+      await messageBroker().sendMessage('erxes-api:integrations-notification', {
+        action: 'sendConversationSms',
+        payload: JSON.stringify({
+          conversationMessageId: message._id,
+          conversationId,
+          integrationId,
+          toPhone: customer.primaryPhone,
+          content: strip(doc.content),
+        }),
+      });
+    }
+
     // send reply to facebook
     if (kind === KIND_CHOICES.FACEBOOK_MESSENGER) {
       type = 'facebook';
@@ -303,6 +338,7 @@ const conversationMutations = {
 
     const dbMessage = await ConversationMessages.getMessage(message._id);
 
+    await utils.sendToWebhook('create', 'userMessages', dbMessage);
     // Publishing both admin & client
     publishMessage(dbMessage, conversation.customerId);
 
@@ -329,6 +365,21 @@ const conversationMutations = {
 
     try {
       await sendConversationToIntegrations(type, integrationId, conversationId, requestName, doc, dataSources, action);
+    } catch (e) {
+      debugExternalApi(e.message);
+      throw new Error(e.message);
+    }
+  },
+
+  async conversationsChangeStatusFacebookComment(_root, doc: IReplyFacebookComment, { dataSources }: IContext) {
+    const requestName = 'replyFacebookPost';
+    const type = 'facebook';
+    const action = 'change-status-comment';
+    const conversationId = doc.commentId;
+    doc.content = '';
+
+    try {
+      await sendConversationToIntegrations(type, '', conversationId, requestName, doc, dataSources, action);
     } catch (e) {
       debugExternalApi(e.message);
       throw new Error(e.message);
@@ -428,6 +479,21 @@ const conversationMutations = {
   },
 
   /**
+   * Resolve all conversations
+   */
+  async conversationResolveAll(_root, params: IListArgs, { user }: IContext) {
+    // initiate query builder
+    const qb = new QueryBuilder(params, { _id: user._id });
+
+    await qb.buildAllQueries();
+    const query = qb.mainQuery();
+
+    const updated = await Conversations.resolveAllConversation(query, user._id);
+
+    return updated.nModified || 0;
+  },
+
+  /**
    * Conversation mark as read
    */
   async conversationMarkAsRead(_root, { _id }: { _id: string }, { user }: IContext) {
@@ -475,6 +541,52 @@ const conversationMutations = {
       throw new Error(e.message);
     }
   },
+
+  async conversationCreateProductBoardNote(_root, { _id }, { dataSources, user }: IContext) {
+    const conversation = await Conversations.findOne({ _id })
+      .select('customerId userId tagIds, integrationId')
+      .lean();
+    const tags = await Tags.find({ _id: { $in: conversation.tagIds } }).select('name');
+    const customer = await Customers.findOne({ _id: conversation.customerId });
+    const messages = await ConversationMessages.find({ conversationId: _id }).sort({
+      createdAt: 1,
+    });
+    const integrationId = conversation.integrationId;
+
+    try {
+      const productBoardLink = await dataSources.IntegrationsAPI.createProductBoardNote({
+        erxesApiConversationId: _id,
+        tags,
+        customer,
+        messages,
+        user,
+        integrationId,
+      });
+
+      return productBoardLink;
+    } catch (e) {
+      debugExternalApi(e.message);
+
+      throw new Error(e.message);
+    }
+  },
+
+  async changeConversationOperator(_root, { _id, operatorStatus }: { _id: string; operatorStatus: string }) {
+    const message = await Messages.createMessage({
+      conversationId: _id,
+      botData: [
+        {
+          type: 'text',
+          text: AUTO_BOT_MESSAGES.CHANGE_OPERATOR,
+        },
+      ],
+    });
+
+    graphqlPubsub.publish('conversationClientMessageInserted', { conversationClientMessageInserted: message });
+    graphqlPubsub.publish('conversationMessageInserted', { conversationMessageInserted: message });
+
+    return Conversations.updateOne({ _id }, { $set: { operatorStatus } });
+  },
 };
 
 requireLogin(conversationMutations, 'conversationMarkAsRead');
@@ -483,5 +595,6 @@ checkPermission(conversationMutations, 'conversationMessageAdd', 'conversationMe
 checkPermission(conversationMutations, 'conversationsAssign', 'assignConversation');
 checkPermission(conversationMutations, 'conversationsUnassign', 'assignConversation');
 checkPermission(conversationMutations, 'conversationsChangeStatus', 'changeConversationStatus');
+checkPermission(conversationMutations, 'conversationResolveAll', 'conversationResolveAll');
 
 export default conversationMutations;

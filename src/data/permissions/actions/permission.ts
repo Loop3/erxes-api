@@ -99,7 +99,15 @@ export const moduleObjects = {
       {
         name: 'customersAll',
         description: 'All',
-        use: ['showCustomers', 'customersAdd', 'customersEdit', 'customersMerge', 'customersRemove', 'exportCustomers'],
+        use: [
+          'showCustomers',
+          'customersAdd',
+          'customersEdit',
+          'customersMerge',
+          'customersRemove',
+          'exportCustomers',
+          'customersChangeState',
+        ],
       },
       {
         name: 'exportCustomers',
@@ -125,52 +133,9 @@ export const moduleObjects = {
         name: 'customersRemove',
         description: 'Remove customers',
       },
-    ],
-  },
-  dashboards: {
-    name: 'dashboards',
-    description: 'Dashboards',
-    actions: [
       {
-        name: 'dashboardsAll',
-        description: 'All',
-        use: [
-          'showDashboards',
-          'dashboardAdd',
-          'dashboardEdit',
-          'dashboardRemove',
-          'dashboardItemAdd',
-          'dashboardItemEdit',
-          'dashboardItemRemove',
-        ],
-      },
-      {
-        name: 'dashboardAdd',
-        description: 'Add dashboard',
-      },
-      {
-        name: 'dashboardEdit',
-        description: 'Edit dashboard',
-      },
-      {
-        name: 'dashboardRemove',
-        description: 'Remove dashboard',
-      },
-      {
-        name: 'dashboardItemAdd',
-        description: 'Add dashboard item',
-      },
-      {
-        name: 'dashboardItemEdit',
-        description: 'Edit dashboard item',
-      },
-      {
-        name: 'dashboardItemRemove',
-        description: 'Remove dashboard item',
-      },
-      {
-        name: 'showDashboards',
-        description: 'Show dashboards',
+        name: 'customersChangeState',
+        description: 'Change customer state',
       },
     ],
   },
@@ -529,6 +494,7 @@ export const moduleObjects = {
           'tasksRemove',
           'tasksWatch',
           'tasksArchive',
+          'taskUpdateTimeTracking',
           'exportTasks',
         ],
       },
@@ -599,6 +565,10 @@ export const moduleObjects = {
       {
         name: 'tasksArchive',
         description: 'Archive all tasks in a specific stage',
+      },
+      {
+        name: 'taskUpdateTimeTracking',
+        description: 'Update time tracking for a task',
       },
       {
         name: 'exportTasks',
@@ -1022,6 +992,10 @@ export const moduleObjects = {
         name: 'conversationMessageAdd',
         description: 'Add conversation message',
       },
+      {
+        name: 'conversationResolveAll',
+        description: 'Resolve all converstaion',
+      },
     ],
   },
   generalSettings: {
@@ -1069,6 +1043,25 @@ export const moduleObjects = {
       {
         name: 'viewLogs',
         description: 'View logs',
+      },
+    ],
+  },
+  webhooks: {
+    name: 'webhooks',
+    description: 'Webhooks',
+    actions: [
+      {
+        name: 'webhooksAll',
+        description: 'All',
+        use: ['showWebhooks', 'manageWebhooks'],
+      },
+      {
+        name: 'showWebhooks',
+        description: 'Show webhooks',
+      },
+      {
+        name: 'manageWebhooks',
+        description: 'Manage webhooks',
       },
     ],
   },
