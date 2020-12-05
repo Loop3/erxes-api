@@ -7,7 +7,7 @@ connect()
 
     if (!rootFlow) {
       rootFlow = await Flows.createFlow({
-        assignedUserId: 'Yxm7fPB9ytuCTnvZD',
+        assignedUserId: 'mexGE3sRQ3sBzNRAT',
         name: 'Root',
         description: '',
       });
@@ -17,7 +17,7 @@ connect()
 
     if (!customerServiceFlow) {
       customerServiceFlow = await Flows.createFlow({
-        assignedUserId: 'Yxm7fPB9ytuCTnvZD',
+        assignedUserId: 'mexGE3sRQ3sBzNRAT',
         name: 'Customer service',
         description: '',
       });
@@ -27,28 +27,8 @@ connect()
 
     if (!commercialAreaFlow) {
       commercialAreaFlow = await Flows.createFlow({
-        assignedUserId: 'Yxm7fPB9ytuCTnvZD',
+        assignedUserId: 'mexGE3sRQ3sBzNRAT',
         name: 'Commercial area',
-        description: '',
-      });
-    }
-
-    let financialFlow = await Flows.findOne({ name: 'Financial' });
-
-    if (!financialFlow) {
-      financialFlow = await Flows.createFlow({
-        assignedUserId: 'Yxm7fPB9ytuCTnvZD',
-        name: 'Financial',
-        description: '',
-      });
-    }
-
-    let purchasingSectorFlow = await Flows.findOne({ name: 'Purchasing Sector' });
-
-    if (!purchasingSectorFlow) {
-      purchasingSectorFlow = await Flows.createFlow({
-        assignedUserId: 'Yxm7fPB9ytuCTnvZD',
-        name: 'Purchasing Sector',
         description: '',
       });
     }
@@ -63,10 +43,6 @@ connect()
 
     const askType = await FlowActionTypes.findOne({
       type: 'erxes.action.to.ask',
-    });
-
-    const transferToAgentType = await FlowActionTypes.findOne({
-      type: 'erxes.action.transfer.to.agent',
     });
 
     const defineDepartmentType = await FlowActionTypes.findOne({
@@ -107,14 +83,11 @@ connect()
         value: JSON.stringify({
           content: [
             'Olá, tudo bem?<br/>' +
-              '<br/>Sou o Sr. Nine, assistente virtual da i9 Food Service!<br/>' +
               '<br/>Estou aqui para ajudá-lo a ter um atendimento mais rápido e objetivo.<br/>' +
               '<br/>Vamos começar?<br/>' +
               '<br/>Primeiro Selecione a opção desejada digitando uma das opções a baixo:<br/>' +
-              '<br/><b>1</b> - Atendimento ao Cliente' +
-              '<br/><b>2</b> - Área Comercial' +
-              '<br/><b>3</b> - Financeiro' +
-              '<br/><b>4</b> - Setor de Compras',
+              '<br/><b>1</b> - Suporte' +
+              '<br/><b>2</b> - Comercial',
           ],
           conditions: [
             {
@@ -129,18 +102,6 @@ connect()
               action: 'erxes.action.execute.action',
               value: '4',
             },
-            {
-              operator: '=',
-              values: ['3', 'financeiro'],
-              action: 'erxes.action.execute.action',
-              value: '6',
-            },
-            {
-              operator: '=',
-              values: ['4', 'compras', 'setor de compras', 'nota fiscal'],
-              action: 'erxes.action.execute.action',
-              value: '8',
-            },
           ],
         }),
       });
@@ -150,7 +111,7 @@ connect()
         flowId: rootFlow.id,
         type: defineDepartmentType?.type,
         actionId: defineDepartmentType?.id,
-        value: 'GjmmiGNcE2jwAnbTo',
+        value: '2BMnHkXaBJdbYbWTH',
       });
 
       await FlowActions.createFlowAction({
@@ -166,7 +127,7 @@ connect()
         flowId: rootFlow.id,
         type: defineDepartmentType?.type,
         actionId: defineDepartmentType?.id,
-        value: 'pMujfwWwppGcG5nrM',
+        value: '4Ma7nSCHZ63bfdgsj',
       });
 
       await FlowActions.createFlowAction({
@@ -175,38 +136,6 @@ connect()
         type: executeFlowType?.type,
         actionId: executeFlowType?.id,
         value: commercialAreaFlow.id,
-      });
-
-      await FlowActions.createFlowAction({
-        order: 6,
-        flowId: rootFlow.id,
-        type: defineDepartmentType?.type,
-        actionId: defineDepartmentType?.id,
-        value: 'ETB9Yk3vNPdKX6mmH',
-      });
-
-      await FlowActions.createFlowAction({
-        order: 7,
-        flowId: rootFlow.id,
-        type: executeFlowType?.type,
-        actionId: executeFlowType?.id,
-        value: financialFlow.id,
-      });
-
-      await FlowActions.createFlowAction({
-        order: 8,
-        flowId: rootFlow.id,
-        type: defineDepartmentType?.type,
-        actionId: defineDepartmentType?.id,
-        value: 'meiCSziaFLEFsBZ5x',
-      });
-
-      await FlowActions.createFlowAction({
-        order: 9,
-        flowId: rootFlow.id,
-        type: executeFlowType?.type,
-        actionId: executeFlowType?.id,
-        value: purchasingSectorFlow.id,
       });
 
       await FlowActions.createFlowAction({
@@ -242,10 +171,11 @@ connect()
               operator: '=',
               values: ['1', '2', '3', '4', '5', '6', '7', '8', 'falar', 'atendente', 'atendimento'],
               action: 'erxes.action.transfer.to.agent',
-              value: 'Muito obrigado, já abri um chamado aqui em breve um de nossos consultores irá entrar em contato.',
+              value:
+                'Muito obrigado, já abri um chamado aqui e em breve um de nossos atendentes irá entrar em contato.',
               error:
                 'Que pena, mas neste momento estamos com todos os nossos atendentes ocupados<br/>' +
-                'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que em breve algum amiguinho humano irá lhe retornar.',
+                'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que em breve algum atendentes irá lhe retornar.',
             },
           ],
         }),
@@ -264,257 +194,13 @@ connect()
             {
               operator: '*',
               values: [],
-              action: 'erxes.action.execute.action',
-              value: '1',
+              action: 'erxes.action.transfer.to.agent',
+              value:
+                'Muito obrigado, já abri um chamado aqui e em breve um de nossos consultores irá entrar em contato.',
+              error:
+                'Que pena, mas neste momento estamos com todos os nossos consultores ocupados<br/>' +
+                'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que em breve algum consultores irá lhe retornar.',
             },
-          ],
-        }),
-      });
-
-      await FlowActions.createFlowAction({
-        order: 1,
-        flowId: commercialAreaFlow.id,
-        type: askType?.type,
-        actionId: askType?.id,
-        value: JSON.stringify({
-          content: [
-            'Já possui cadastro conosco?' + '<br/><br/><b>1</b> - Já sou cliente' + '<br/><b>2</b> - Não sou cliente',
-          ],
-          conditions: [
-            {
-              operator: '=',
-              values: ['1', 'já sou cliente', 'sou cliente', 'tenho', 'sim', 'tenho cadastro'],
-              action: 'erxes.action.execute.action',
-              value: '2',
-            },
-            {
-              operator: '=',
-              values: ['2', 'não sou cliente', 'não sou', 'não tenho', 'não', 'não tenho cadastro'],
-              action: 'erxes.action.execute.action',
-              value: '3',
-            },
-          ],
-        }),
-      });
-
-      await FlowActions.createFlowAction({
-        order: 2,
-        flowId: commercialAreaFlow.id,
-        type: askType?.type,
-        actionId: askType?.id,
-        value: JSON.stringify({
-          content: ['Qual seu CNPJ ou CPF?'],
-          conditions: [
-            {
-              operator: '*',
-              values: [],
-              action: 'erxes.action.execute.action',
-              value: '3',
-            },
-          ],
-        }),
-      });
-
-      await FlowActions.createFlowAction({
-        order: 3,
-        flowId: commercialAreaFlow.id,
-        type: transferToAgentType?.type,
-        actionId: transferToAgentType?.id,
-        value: JSON.stringify({
-          value: 'Muito obrigado, Aguarde enquanto eu transfiro para um de nossos atendentes.',
-          error:
-            'Que pena, mas neste momento estamos com todos os nossos atendentes ocupados<br/>' +
-            'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que em breve algum amiguinho humano irá lhe retornar.',
-        }),
-      });
-    }
-
-    if (!(await FlowActions.count({ flowId: financialFlow.id }))) {
-      await FlowActions.createFlowAction({
-        order: 0,
-        flowId: financialFlow.id,
-        type: askType?.type,
-        actionId: askType?.id,
-        value: JSON.stringify({
-          content: [
-            'Legal, por favor digite a opção desejada:' +
-              '<br/><b>1</b> - 2° Via do Boleto bancário' +
-              '<br/><b>2</b> - Faturamento' +
-              '<br/><b>3</b> - Cancelamento de Pedido' +
-              '<br/><b>4</b> - Nota Fiscal/XML',
-          ],
-          conditions: [
-            {
-              operator: '=',
-              values: [
-                '1',
-                'boleto',
-                'segunda via',
-                'segunda via boleto',
-                '2ª via',
-                '2ª via do boleto bancario',
-                '2ª via do boleto bancário',
-                'boleto bancário',
-                'boleto bancario',
-              ],
-              action: 'erxes.action.execute.action',
-              value: '1',
-            },
-            {
-              operator: '=',
-              values: ['2', 'faturamento', 'fatura'],
-              action: 'erxes.action.execute.action',
-              value: '2',
-            },
-            {
-              operator: '=',
-              values: ['3', 'cancelamento', 'cancelamento de pedido', 'cancelar de pedido', 'cancelar'],
-              action: 'erxes.action.execute.action',
-              value: '2',
-            },
-            {
-              operator: '=',
-              values: ['4', 'nota fiscal', 'nota', 'xml', 'nf', 'nfe', 'nf-e'],
-              action: 'erxes.action.execute.action',
-              value: '2',
-            },
-          ],
-        }),
-      });
-
-      await FlowActions.createFlowAction({
-        order: 1,
-        flowId: financialFlow.id,
-        type: askType?.type,
-        actionId: askType?.id,
-        value: JSON.stringify({
-          content: ['Qual seu CNPJ ou CPF?'],
-          conditions: [
-            {
-              operator: '*',
-              values: [],
-              action: 'erxes.action.execute.action',
-              value: '2',
-            },
-          ],
-        }),
-      });
-
-      await FlowActions.createFlowAction({
-        order: 2,
-        flowId: financialFlow.id,
-        type: transferToAgentType?.type,
-        actionId: transferToAgentType?.id,
-        value: JSON.stringify({
-          value: 'Muito obrigado, aguarde enquanto eu transfiro para um de nossos atendentes.',
-          error:
-            'Que pena, mas neste momento estamos com todos os nossos atendentes ocupados<br/>' +
-            'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que em breve algum amiguinho humano irá lhe retornar.',
-        }),
-      });
-    }
-
-    if (!(await FlowActions.count({ flowId: purchasingSectorFlow.id }))) {
-      await FlowActions.createFlowAction({
-        order: 0,
-        flowId: purchasingSectorFlow.id,
-        type: askType?.type,
-        actionId: askType?.id,
-        value: JSON.stringify({
-          content: [
-            'Legal, por favor digite a opção desejada:' +
-              '<br/><b>1</b> - Cadastro de Fornecedor' +
-              '<br/><b>2</b> - Transferir para atendimento',
-          ],
-          conditions: [
-            {
-              operator: '=',
-              values: ['1', 'cadastro', 'cadastro fornecedor', 'cadastro de fornecedor'],
-              action: 'erxes.action.execute.action',
-              value: '4',
-            },
-            {
-              operator: '=',
-              values: ['2', 'transferir', 'falar', 'atendente', 'atendimento'],
-              action: 'erxes.action.execute.action',
-              value: '1',
-            },
-          ],
-        }),
-      });
-
-      await FlowActions.createFlowAction({
-        order: 1,
-        flowId: purchasingSectorFlow.id,
-        type: askType?.type,
-        actionId: askType?.id,
-        value: JSON.stringify({
-          content: [
-            'Por favor, para eu continuar com o atendimento preciso de algumas informações.' +
-              '<br/><br/>Já possui cadastro conosco?' +
-              '<br/><b>1</b> - Sim, sou fornecedor' +
-              '<br/><b>2</b> - Não sou cadastrado',
-          ],
-          conditions: [
-            {
-              operator: '=',
-              values: ['1', 'sim', 'sim, sou fornecedor', 'sou fornecedor', 'tenho'],
-              action: 'erxes.action.execute.action',
-              value: '2',
-            },
-            {
-              operator: '=',
-              values: ['2', 'não', 'não sou cadastrado', 'não sou', 'não tenho'],
-              action: 'erxes.action.execute.action',
-              value: '3',
-            },
-          ],
-        }),
-      });
-
-      await FlowActions.createFlowAction({
-        order: 2,
-        flowId: purchasingSectorFlow.id,
-        type: askType?.type,
-        actionId: askType?.id,
-        value: JSON.stringify({
-          content: [
-            'Por favor, para eu continuar com o atendimento preciso de algumas informações.' +
-              '<br/><br/>Qual seu CNPJ ou CPF?',
-          ],
-          conditions: [
-            {
-              operator: '*',
-              values: [],
-              action: 'erxes.action.execute.action',
-              value: '3',
-            },
-          ],
-        }),
-      });
-
-      await FlowActions.createFlowAction({
-        order: 3,
-        flowId: purchasingSectorFlow.id,
-        type: transferToAgentType?.type,
-        actionId: transferToAgentType?.id,
-        value: JSON.stringify({
-          value: 'Muito obrigado, aguarde enquanto eu transfiro para um de nossos atendentes.',
-          error:
-            'Que pena, mas neste momento estamos com todos os nossos atendentes ocupados<br/>' +
-            'Mas fique tranquilo, deixe aqui sua mensagem de texto ou de voz que em breve algum amiguinho humano irá lhe retornar.',
-        }),
-      });
-
-      await FlowActions.createFlowAction({
-        order: 4,
-        flowId: purchasingSectorFlow.id,
-        type: sendMessageType?.type,
-        actionId: sendMessageType?.id,
-        value: JSON.stringify({
-          content: [
-            'Para ser um de nossos fornecedores é muito simples, basta acessar o link a baixo e realizar seu cadastro, em até 48 horas nossa equipe entrara em contato.' +
-              '<br/><br/>Link para cadastro: https://www.inovealimentos.com.br/cadastro-fornecedor',
           ],
         }),
       });
