@@ -97,6 +97,20 @@ export const receiveRpcMessage = async msg => {
   }
 
   if (action === 'create-conversation-message') {
+    if (doc.isMe) {
+      let conversation = await Conversations.findById(doc.conversationId);
+
+      let userId = conversation?.assignedUserId;
+
+      if (!userId) {
+        const integration = await Integrations.findOne({ _id: doc.integrationId });
+
+        userId = integration?.defaultSenderId || integration?.createdUserId;
+      }
+
+      doc.userId = userId;
+    }
+
     const message = await ConversationMessages.createMessage(doc);
 
     const conversationDoc: {

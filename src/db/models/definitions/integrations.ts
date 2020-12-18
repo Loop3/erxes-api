@@ -117,6 +117,7 @@ export interface IIntegration {
 export interface IIntegrationDocument extends IIntegration, Document {
   _id: string;
   createdUserId: string;
+  defaultSenderId: string;
   // TODO remove
   formData?: ILeadData;
   leadData?: ILeadDataDocument;
@@ -301,7 +302,7 @@ const webhookDataSchema = new Schema(
 export const integrationSchema = new Schema({
   _id: field({ pkey: true }),
   createdUserId: field({ type: String, label: 'Created by' }),
-
+  defaultSenderId: field({ type: String, label: 'Default sender' }),
   kind: field({
     type: String,
     enum: KIND_CHOICES.ALL,
