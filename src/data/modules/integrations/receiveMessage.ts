@@ -106,6 +106,18 @@ export const receiveRpcMessage = async msg => {
         const integration = await Integrations.findOne({ _id: doc.integrationId });
 
         userId = integration?.defaultSenderId || integration?.createdUserId;
+
+        if (!userId) {
+          const user = await Users.findOne({ isOwner: true });
+
+          userId = user?._id;
+        }
+
+        if (userId && conversation) {
+          conversation.assignedUserId = userId;
+
+          await Conversations.updateOne({ _id: conversation._id }, { assignedUserId: conversation.assignedUserId });
+        }
       }
 
       doc.userId = userId;
