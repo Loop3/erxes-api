@@ -112,12 +112,6 @@ export const receiveRpcMessage = async msg => {
 
           userId = user?._id;
         }
-
-        if (userId && conversation) {
-          conversation.assignedUserId = userId;
-
-          await Conversations.updateOne({ _id: conversation._id }, { assignedUserId: conversation.assignedUserId });
-        }
       }
 
       doc.userId = userId;
