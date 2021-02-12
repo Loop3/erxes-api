@@ -6376,6 +6376,11 @@ levn@~0.3.0:
     prelude-ls "~1.1.2"
     type-check "~0.3.2"
 
+libphonenumber-js@^1.9.10:
+  version "1.9.10"
+  resolved "https://registry.yarnpkg.com/libphonenumber-js/-/libphonenumber-js-1.9.10.tgz#40944a824512d74566f3e4a04fd276a11cb3e095"
+  integrity sha512-XyBYwt1dQCc9emeb78uCqJv9qy9tJQsg6vYDeJt37dwBYiZga8z0rHI5dcrn3aFKz9C5Nn9azaRBC+wmW91FfQ==
+
 lie@~3.3.0:
   version "3.3.0"
   resolved "https://registry.yarnpkg.com/lie/-/lie-3.3.0.tgz#dcf82dee545f46074daf200c7c1c5a08e0f40f6a"

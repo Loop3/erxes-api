@@ -112,12 +112,6 @@ export const receiveRpcMessage = async msg => {
 
           userId = user?._id;
         }
-
-        if (userId && conversation) {
-          conversation.assignedUserId = userId;
-
-          await Conversations.updateOne({ _id: conversation._id }, { assignedUserId: conversation.assignedUserId });
-        }
       }
 
       doc.userId = userId;
@@ -168,7 +162,11 @@ export const receiveRpcMessage = async msg => {
 
     if (!message.status || message.status < doc.status) message.status = doc.status;
 
-    await ConversationMessages.updateOne({ _id: message._id }, { status: message.status, createdAt: doc.createdAt });
+    const update: any = { status: message.status };
+
+    if (doc.createdAt) update.createdAt = doc.createdAt;
+
+    await ConversationMessages.updateOne({ _id: message._id }, update);
 
     const conversationDoc: {
       updatedAt?: Date;

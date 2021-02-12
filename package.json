@@ -93,7 +93,9 @@
     "ioredis": "^3.2.2",
     "json2csv": "^5.0.1",
     "jsonwebtoken": "^8.1.0",
+    "libphonenumber-js": "^1.9.10",
     "meteor-random": "^0.0.3",
+    "migrate": "^1.6.2",
     "moment": "^2.18.1",
     "moment-timezone": "^0.5.31",
     "mongo-uri": "^0.1.2",
@@ -115,8 +117,7 @@
     "vm2": "^3.9.2",
     "xlsx-populate": "^1.20.1",
     "xlsx-stream-reader": "^1.1.0",
-    "xss": "^1.0.6",
-    "migrate": "^1.6.2"
+    "xss": "^1.0.6"
   },
   "peerOptionalDependencies": {
     "kerberos": "^1.0.0"

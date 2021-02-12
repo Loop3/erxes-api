@@ -29,12 +29,21 @@ import {
 import { graphqlPubsub } from '../../../pubsub';
 import { IIntegrationDocument } from '../../../db/models/definitions/integrations';
 import { IDetail, IUserDocument } from '../../../db/models/definitions/users';
+import { isValidNumber, isValidNumberForRegion } from 'libphonenumber-js';
 
 const actionWithSendNext = ['erxes.action.send.message', 'erxes.action.define.department', 'erxes.action.conditional'];
 
+export function removeDiacritics(string) {
+  return String(string)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
 const checkIfIsCondition = (condition: IFlowActionValueCondition, content: string = '') => {
+  content = removeDiacritics(content.toLowerCase());
+
   switch (condition.operator) {
-    case '=':
+    case '=': // Equals
       switch (condition.type) {
         case 'erxes.conditional.variable':
           switch (condition.variable.key) {
@@ -50,10 +59,30 @@ const checkIfIsCondition = (condition: IFlowActionValueCondition, content: strin
           break;
 
         default:
-          return condition.values.includes(content);
+          return condition.values.map(c => removeDiacritics(c.toLowerCase())).includes(content);
       }
-    case '*':
+
+    case '*': // Anything
       return true;
+
+    case '#': // "Phonenumber"
+      const number = content.match(/\d/g)?.join('') || '';
+
+      if (isValidNumber(`+${number}`)) return true;
+
+      if (isValidNumberForRegion(number, 'BR')) return true;
+
+      if (isValidNumberForRegion(number, 'US')) return true;
+
+      return false;
+
+    case '@': // "Email"
+      return /(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))/g.test(
+        content,
+      );
+
+    case '%': // "Contains"
+      return condition.values.map(c => removeDiacritics(c.toLowerCase())).find(c => c.indexOf(content) !== -1);
     default:
       return false;
   }
