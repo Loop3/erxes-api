@@ -39,7 +39,7 @@ export function removeDiacritics(string) {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
-const checkIfIsCondition = (condition: IFlowActionValueCondition, content: string = '') => {
+const checkIfIsCondition = (condition: IFlowActionValueCondition, content: string = '', attachments: any[] = []) => {
   content = removeDiacritics(content.toLowerCase());
 
   switch (condition.operator) {
@@ -82,14 +82,17 @@ const checkIfIsCondition = (condition: IFlowActionValueCondition, content: strin
       );
 
     case '%': // "Contains"
-      return condition.values.map(c => removeDiacritics(c.toLowerCase())).find(c => c.indexOf(content) !== -1);
+      return Boolean(condition.values.map(c => removeDiacritics(c.toLowerCase())).find(c => c.indexOf(content) !== -1));
+
+    case 'º': // "Image"
+      return Boolean(attachments && attachments.length > 0);
     default:
       return false;
   }
 };
 
 const handleMessage = async (msg: IMessageDocument) => {
-  if (msg.isGroupMsg || !msg.content || !msg.customerId) return;
+  if (msg.isGroupMsg || !msg.customerId) return;
 
   let conversation = await Conversations.getConversation(msg.conversationId);
 
@@ -182,7 +185,7 @@ const handleMessage = async (msg: IMessageDocument) => {
         case 'erxes.action.to.ask': {
           const { conditions }: IFlowActionValue = JSON.parse(flowAction.value || '{}');
 
-          const condition = conditions.find(c => checkIfIsCondition(c, msg.content));
+          const condition = conditions.find(c => checkIfIsCondition(c, msg.content, msg.attachments));
 
           if (condition) {
             switch (condition.action) {
@@ -205,7 +208,7 @@ const handleMessage = async (msg: IMessageDocument) => {
         case 'erxes.action.conditional': {
           const { conditions }: IFlowActionValue = JSON.parse(flowAction.value || '{}');
 
-          const condition = conditions.find(c => checkIfIsCondition(c, msg.content));
+          const condition = conditions.find(c => checkIfIsCondition(c, msg.content, msg.attachments));
 
           if (condition) {
             switch (condition.action) {
