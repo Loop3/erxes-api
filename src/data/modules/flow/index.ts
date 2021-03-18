@@ -302,6 +302,7 @@ const handleMessage = async (msg: IMessageDocument) => {
   }
 
   if (sendNextMessage) {
+    await new Promise(res => setTimeout(res, 1000));
     await handleMessage(msg);
   }
 };
