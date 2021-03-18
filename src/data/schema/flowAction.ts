@@ -7,6 +7,7 @@ export const types = `
     order: Int!
     flowId: String!
     createdAt: Date
+    executeNext: Boolean!
   }
 `;
 

@@ -181,6 +181,8 @@ const handleMessage = async (msg: IMessageDocument) => {
           await Conversations.updateConversation(conversation.id, {
             currentFlowActionId: flowAction?.id,
           });
+
+          sendNextMessage = flowAction?.executeNext ?? false;
           break;
         case 'erxes.action.to.ask': {
           const { conditions }: IFlowActionValue = JSON.parse(flowAction.value || '{}');
@@ -300,6 +302,7 @@ const handleMessage = async (msg: IMessageDocument) => {
   }
 
   if (sendNextMessage) {
+    await new Promise(res => setTimeout(res, 1000));
     await handleMessage(msg);
   }
 };
