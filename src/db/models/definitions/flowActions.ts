@@ -27,8 +27,14 @@ export interface IFlowActionValueCondition {
   error: string;
 }
 
+export interface IFlowActionContent {
+  file: string;
+  fileType: string;
+  text: string;
+}
+
 export interface IFlowActionValue {
-  content: string[];
+  content: string[] | IFlowActionContent[];
   conditions: IFlowActionValueCondition[];
 }
 

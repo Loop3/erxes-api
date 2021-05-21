@@ -476,6 +476,20 @@ const processSendMessage = async (flowAction: IFlowActionDocument, conversation:
 
   position = Math.round(position * Math.random());
 
+  let message = content[position];
+
+  let file = '';
+  let fileType = '';
+  let text = '';
+
+  if (typeof message === 'string') {
+    text = message;
+  } else {
+    text = message.text;
+    file = message.file;
+    fileType = message.fileType;
+  }
+
   let lastMessage = await ConversationMessages.findOne({
     userId: conversation.assignedUserId,
     conversationId: conversation.id,
@@ -485,7 +499,8 @@ const processSendMessage = async (flowAction: IFlowActionDocument, conversation:
 
   if (
     lastMessage &&
-    content.includes(lastMessage.content || '') &&
+    text &&
+    text.includes(lastMessage.content || '') &&
     moment(lastMessage.createdAt).isAfter(moment().subtract(30, 'minutes'))
   )
     return;
@@ -494,7 +509,8 @@ const processSendMessage = async (flowAction: IFlowActionDocument, conversation:
     conversationId: conversation.id,
     flowActionId: flowAction.id,
     internal: false,
-    content: content[position],
+    content: text,
+    attachments: file ? [{ type: fileType, url: file }] : undefined,
   };
 
   handleSendMessage(integration, conversation, doc, user);
