@@ -33,6 +33,8 @@ import { isValidNumber, isValidNumberForRegion } from 'libphonenumber-js';
 
 const actionWithSendNext = ['erxes.action.send.message', 'erxes.action.define.department', 'erxes.action.conditional'];
 
+const { RETURN_CHAT_TO_BOT_AFTER } = process.env;
+
 export function removeDiacritics(string) {
   return String(string)
     .normalize('NFD')
@@ -106,7 +108,7 @@ const handleMessage = async (msg: IMessageDocument) => {
 
   if (!flow) return;
 
-  if (conversation.assignedUserId) {
+  if (conversation.assignedUserId && String(RETURN_CHAT_TO_BOT_AFTER) !== '0') {
     if (conversation.assignedUserId !== flow.assignedUserId) {
       let lastMessage = await ConversationMessages.findOne({
         userId: conversation.assignedUserId,
@@ -115,7 +117,10 @@ const handleMessage = async (msg: IMessageDocument) => {
         .sort({ createdAt: -1 })
         .exec();
 
-      if (lastMessage && moment(lastMessage.createdAt).isAfter(moment().subtract(1, 'day'))) {
+      if (
+        lastMessage &&
+        moment(lastMessage.createdAt).isAfter(moment().subtract(RETURN_CHAT_TO_BOT_AFTER || 24, 'hours'))
+      ) {
         return;
       }
 
