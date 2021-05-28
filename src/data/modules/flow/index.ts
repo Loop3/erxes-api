@@ -109,7 +109,7 @@ const handleMessage = async (msg: IMessageDocument) => {
   if (!flow) return;
 
   if (conversation.assignedUserId && conversation.assignedUserId !== flow.assignedUserId) {
-    if (String(RETURN_CHAT_TO_BOT_AFTER) !== '0') return;
+    if (String(RETURN_CHAT_TO_BOT_AFTER) === '0') return;
 
     let lastMessage = await ConversationMessages.findOne({
       userId: conversation.assignedUserId,
