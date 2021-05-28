@@ -108,24 +108,24 @@ const handleMessage = async (msg: IMessageDocument) => {
 
   if (!flow) return;
 
-  if (conversation.assignedUserId && String(RETURN_CHAT_TO_BOT_AFTER) !== '0') {
-    if (conversation.assignedUserId !== flow.assignedUserId) {
-      let lastMessage = await ConversationMessages.findOne({
-        userId: conversation.assignedUserId,
-        conversationId: conversation.id,
-      })
-        .sort({ createdAt: -1 })
-        .exec();
+  if (conversation.assignedUserId && conversation.assignedUserId !== flow.assignedUserId) {
+    if (String(RETURN_CHAT_TO_BOT_AFTER) !== '0') return;
 
-      if (
-        lastMessage &&
-        moment(lastMessage.createdAt).isAfter(moment().subtract(RETURN_CHAT_TO_BOT_AFTER || 24, 'hours'))
-      ) {
-        return;
-      }
+    let lastMessage = await ConversationMessages.findOne({
+      userId: conversation.assignedUserId,
+      conversationId: conversation.id,
+    })
+      .sort({ createdAt: -1 })
+      .exec();
 
-      conversation.assignedUserId = undefined;
+    if (
+      lastMessage &&
+      moment(lastMessage.createdAt).isAfter(moment().subtract(RETURN_CHAT_TO_BOT_AFTER || 24, 'hours'))
+    ) {
+      return;
     }
+
+    conversation.assignedUserId = undefined;
   }
 
   const user = await Users.findById(flow.assignedUserId);
