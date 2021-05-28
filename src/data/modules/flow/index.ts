@@ -327,6 +327,7 @@ const handleTransferToAgent = async (
       {
         $match: {
           _id: { $in: channel.memberIds },
+          isActive: { $ne: false },
           lastSeenAt: {
             $gte: moment()
               .subtract(61, 'seconds')
