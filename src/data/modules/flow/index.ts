@@ -395,7 +395,9 @@ const handleTransferToAgent = async (
       let users = await Users.aggregate([
         {
           $match: {
+            _id: { $in: channel.memberIds },
             brandIds: { $in: [integration.brandId] },
+            isActive: { $ne: false },
           },
         },
         { $sample: { size: 1 } },
@@ -411,6 +413,7 @@ const handleTransferToAgent = async (
         {
           $match: {
             brandIds: { $in: [integration.brandId] },
+            isActive: { $ne: false },
           },
         },
         { $sample: { size: 1 } },
