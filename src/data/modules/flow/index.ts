@@ -557,8 +557,8 @@ const handleSendMessage = async (
   }
 
   if (kind === KIND_CHOICES.WHATSPRO) {
-    type = 'whatspro';
-    requestName = 'replyWhatsPro';
+    type = 'whatsapp';
+    requestName = 'replyWhatsApp';
   }
 
   await sendConversationToIntegrations(

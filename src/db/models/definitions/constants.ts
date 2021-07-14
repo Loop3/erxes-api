@@ -85,8 +85,8 @@ export const KIND_CHOICES = {
   SMOOCH_LINE: 'smooch-line',
   SMOOCH_TELEGRAM: 'smooch-telegram',
   SMOOCH_TWILIO: 'smooch-twilio',
-  WHATSAPP: 'whatsapp',
-  WHATSPRO: 'whatspro',
+  WHATSAPP: 'whatsapp2',
+  WHATSPRO: 'whatsapp',
   TELNYX: 'telnyx',
   WEBHOOK: 'webhook',
   ALL: [
@@ -108,8 +108,8 @@ export const KIND_CHOICES = {
     'smooch-line',
     'smooch-telegram',
     'smooch-twilio',
+    'whatsapp2',
     'whatsapp',
-    'whatspro',
     'telnyx',
     'webhook',
   ],
@@ -134,8 +134,8 @@ export const INTEGRATION_NAMES_MAP = {
   'smooch-line': 'Line',
   'smooch-telegram': 'Telegram',
   'smooch-twilio': 'Twilio SMS',
-  whatsapp: 'WhatsApp',
-  whatspro: 'WhatsPro',
+  whatsapp: 'WhatsApp2',
+  whatspro: 'WhatsApp',
   webhook: 'Webhook',
 };
 

@@ -72,7 +72,7 @@ export const sendConversationToIntegrations = (
     });
   }
 
-  if (type === 'whatspro') {
+  if (type === KIND_CHOICES.WHATSPRO) {
     doc.content = doc.content.replace(/<\/?(b|strong)>/g, '*');
     doc.content = doc.content.replace(/<br ?\/?>/g, '\n');
     doc.content = doc.content.replace(/<\/?i>/g, '_');
@@ -318,11 +318,11 @@ const conversationMutations = {
 
     // send reply to whatsapp
     if (kind === KIND_CHOICES.WHATSAPP) {
-      requestName = 'replyWhatsApp';
+      requestName = 'replyWhatsApp2';
     }
 
     if (kind === KIND_CHOICES.WHATSPRO) {
-      requestName = 'replyWhatsPro';
+      requestName = 'replyWhatsApp';
     }
 
     await sendConversationToIntegrations(

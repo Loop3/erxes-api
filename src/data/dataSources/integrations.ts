@@ -71,12 +71,12 @@ export default class IntegrationsAPI extends RESTDataSource {
     return this.post('/smooch/reply', params);
   }
 
-  public async replyWhatsApp(params) {
-    return this.post('/whatsapp/reply', params);
+  public async replyWhatsApp2(params) {
+    return this.post('/whatsapp2/reply', params);
   }
-  
-  public async replyWhatsPro(params) {
-    return this.post('/whatsPro/reply', params);
+
+  public async replyWhatsApp(params) {
+    return this.post('/whatsApp/reply', params);
   }
 
   public async updateConfigs(configsMap) {

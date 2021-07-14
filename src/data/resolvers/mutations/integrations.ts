@@ -250,8 +250,8 @@ const integrationMutations = {
           'smooch-telegram',
           'smooch-line',
           'smooch-twilio',
+          'whatsapp2',
           'whatsapp',
-          'whatspro',
           'telnyx',
         ].includes(integration.kind)
       ) {
